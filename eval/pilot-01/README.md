@@ -103,9 +103,10 @@ The full prompts are in `prompts/`; their hashes are in `fixture/expected.sha256
 - `PRODUCTION_REACH_ESCAPE`: production code that reaches another module's repository at runtime through a file outside `src/` or a test-named file. S1 does not count such a file as production.
 - `REPOSITORY_SPLIT_TARGET`: an import of a file that another module's `repository.ts` re-exports from. S4 defines repositories by path.
 
-`score/replay.ts` (S14) replays each run with the scorer's own S1–S7 code. `replay_incomplete` is set when:
+`score/replay.ts` (S14) replays each run with the scorer's own S1–S7 code. A successful Bash `rm`, `unlink`, `git rm` or `find … -delete` is replayed as a deletion step when its operands are literal paths or globs inside the run root. `replay_incomplete` is set when:
 
 - a Bash command writes to `src/`;
+- a successful Bash deletion names paths the replay cannot resolve (an expansion, a relative path after a `cd`, or `rm` run through `xargs`, `find -exec` or `sh -c`);
 - a code file under `src/` at END differs from the replayed tree;
 - the END verdict differs from the replay's final verdict.
 

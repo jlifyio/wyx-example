@@ -1,0 +1,14 @@
+Process-metric self-test case: replay-bash-rm-unresolved
+
+Kind: replay (score/replay.ts), arm B, task T1
+
+Scenario
+The run writes the violating src/payments/helper.ts, then removes it with `rm $(ls src/payments/helper*.ts)`: a
+successful deletion whose operand is a command substitution. END equals BASE.
+
+Expected
+The replay does not guess what the substitution names: nothing is deleted, the replay ends on the violation, and
+replay_incomplete is true with bash_delete_unresolved next to the END divergence reasons.
+
+@RUN@ in stream.jsonl and instr.jsonl stands for the recorded run root; ../process.ts substitutes it.
+END is BASE plus end.diff (BASE itself when there is no end.diff).

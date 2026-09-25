@@ -1,11 +1,11 @@
-// S14 process metrics: replays successful Write/Edit/MultiEdit tool calls from a stream onto BASE and evaluates critical edges after every step.
+// S14 process metrics: replays successful Write/Edit/MultiEdit tool calls and statically resolvable Bash deletions from a stream onto BASE and evaluates critical edges after every step.
 import { chmodSync, cpSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { basename, dirname, join } from "node:path";
+import { basename, dirname, isAbsolute, join, normalize } from "node:path";
 import { SEP, buildModel, classifyNew, moduleDirsOf, tuples, walkTree, type Model, type Occ } from "./score.ts";
 import {
   CODE_RE, EDIT_TOOLS, WYX_TOKENS,
-  bashSrcWriteOps, hookResponses, inputPath, readJsonl, selectOne, succeeded, toolCalls, toRel,
+  bashChangesCwd, bashDeletes, bashSrcWriteOps, hookResponses, inputPath, readJsonl, selectOne, succeeded, toolCalls, toRel, wordRel,
   type ToolCall,
 } from "./stream.ts";
 
@@ -83,6 +83,48 @@ function editsOf(c: ToolCall): Array<{ old_string: string; new_string: string; r
   return [];
 }
 
+/** Every path at or below rel in the replayed tree (rel itself first). */
+function pathsUnder(tree: string, rel: string): string[] {
+  const abs = join(tree, rel);
+  if (!existsSync(abs)) return [];
+  if (!lstatSync(abs).isDirectory()) return [rel];
+  return [rel, ...readdirSync(abs).flatMap((n) => pathsUnder(tree, join(rel, n)))];
+}
+
+/**
+ * Run-relative paths a successful Bash call deletes from the replayed tree, and why any deletion could not be resolved.
+ * Only literal paths and globs inside the run root are resolved; a glob expands against the replayed tree.
+ */
+function bashDeletePaths(command: string, runRoot: string, tree: string, cwdKnown: boolean): { paths: string[]; unresolved: string[] } {
+  const paths: string[] = [];
+  const unresolved: string[] = [];
+  for (const d of bashDeletes(command)) {
+    if (d.unresolved) { unresolved.push(`${d.op}: ${d.unresolved}`); continue; }
+    for (const w of d.paths) {
+      const rel = wordRel(w, runRoot, cwdKnown && !d.afterCd, true);
+      if (rel === undefined) { unresolved.push(`${d.op} ${w.text}: not a literal path from the run root`); continue; }
+      if (rel === null) {
+        const abs = isAbsolute(w.text) ? normalize(w.text) : join(runRoot, w.text);
+        if (toRel(runRoot, abs) !== null || normalize(runRoot) === abs.replace(/\/+$/, "")) unresolved.push(`${d.op} ${w.text}: covers the run root`);
+        continue;
+      }
+      const hits = w.glob ? [...new Bun.Glob(rel).scanSync({ cwd: tree, onlyFiles: false })] : existsSync(join(tree, rel)) ? [rel] : [];
+      for (const hit of hits) {
+        const isDir = lstatSync(join(tree, hit)).isDirectory();
+        if (d.find) {
+          for (const p of pathsUnder(tree, hit)) {
+            const dir = lstatSync(join(tree, p)).isDirectory();
+            if (d.find.type && (d.find.type === "d") !== dir) continue;
+            if (d.find.name !== null && !new Bun.Glob(d.find.name).match(basename(p))) continue;
+            paths.push(p);
+          }
+        } else if (!isDir || d.recursive) paths.push(hit);
+      }
+    }
+  }
+  return { paths: [...new Set(paths)], unresolved };
+}
+
 export interface ReplayOpts { id: string; stream: string; base: string; runPath: string | null; end: string | null; tmpRoot: string }
 
 export function replay(o: ReplayOpts) {
@@ -113,11 +155,46 @@ export function replay(o: ReplayOpts) {
     const desyncs: any[] = [];
     const resyncs: any[] = [];
     const touched = new Set<string>();
+    const bashDeleted: any[] = [];
     let prevKeys = new Set<string>();
     let lastRuntime: Finding[] = [];
     let first: any = null;
-    const ordered = calls.filter((c) => EDIT_TOOLS.has(c.name) && succeeded(c)).sort((a, b) => a.resultIdx! - b.resultIdx!);
+    const ranBash = (c: ToolCall) => c.name === "Bash" && typeof c.input?.command === "string" && !c.denied && c.resultIdx !== null;
+    const ordered = calls.filter((c) => (EDIT_TOOLS.has(c.name) && succeeded(c)) || ranBash(c)).sort((a, b) => a.resultIdx! - b.resultIdx!);
+    const evalStep = (c: ToolCall, fields: { file: string | null; applied: boolean; desync: string | null; deleted?: string[] }) => {
+      const ev = evalTree(tree, strip, moduleDirs);
+      const findings = criticalFindings(ev, TB, baseHas);
+      const runtime = findings.filter(isRuntimeCritical);
+      const keys = new Set(runtime.map(findingKey));
+      const step = {
+        step: steps.length + 1, tool: c.name, tool_use_id: c.id, parent_tool_use_id: c.parent, ...fields,
+        use_idx: c.useIdx, msg_start_idx: c.msgStartIdx, result_idx: c.resultIdx,
+        critical_runtime_n: runtime.length,
+        new_critical_runtime: runtime.filter((f) => !prevKeys.has(findingKey(f))),
+        removed_critical_runtime: [...prevKeys].filter((k) => !keys.has(k)),
+        other_findings: findings.filter((f) => !isRuntimeCritical(f)),
+        flags: ev.flags,
+      };
+      steps.push(step);
+      if (!first && runtime.length) first = step;
+      prevKeys = keys;
+      lastRuntime = runtime;
+    };
+    // Bash keeps its working directory between calls: after a cd in any call that ran, relative paths are unresolved.
+    let cwdKnown = true;
     for (const c of ordered) {
+      if (c.name === "Bash") {
+        const command = String(c.input.command);
+        if (succeeded(c)) {
+          const { paths, unresolved } = bashDeletePaths(command, runRoot, tree, cwdKnown);
+          if (paths.length || unresolved.length) bashDeleted.push({ tool_use_id: c.id, deleted: paths, unresolved, command: command.slice(0, 400) });
+          for (const rel of paths.flatMap((r) => pathsUnder(tree, r))) if (!lstatSync(join(tree, rel)).isDirectory()) touched.add(rel);
+          for (const rel of paths) rmSync(join(tree, rel), { recursive: true, force: true });
+          if (paths.length) evalStep(c, { file: null, applied: true, desync: null, deleted: paths });
+        }
+        if (bashChangesCwd(command)) cwdKnown = false;
+        continue;
+      }
       const p = inputPath(c.input);
       const rel = p ? toRel(p, runRoot) : null;
       if (!rel) continue;
@@ -142,23 +219,7 @@ export function replay(o: ReplayOpts) {
         writeFileSync(abs, after);
         touched.add(rel);
       }
-      const ev = evalTree(tree, strip, moduleDirs);
-      const findings = criticalFindings(ev, TB, baseHas);
-      const runtime = findings.filter(isRuntimeCritical);
-      const keys = new Set(runtime.map(findingKey));
-      const step = {
-        step: steps.length + 1, tool: c.name, tool_use_id: c.id, parent_tool_use_id: c.parent, file: rel,
-        use_idx: c.useIdx, msg_start_idx: c.msgStartIdx, result_idx: c.resultIdx, applied: after !== null, desync,
-        critical_runtime_n: runtime.length,
-        new_critical_runtime: runtime.filter((f) => !prevKeys.has(findingKey(f))),
-        removed_critical_runtime: [...prevKeys].filter((k) => !keys.has(k)),
-        other_findings: findings.filter((f) => !isRuntimeCritical(f)),
-        flags: ev.flags,
-      };
-      steps.push(step);
-      if (!first && runtime.length) first = step;
-      prevKeys = keys;
-      lastRuntime = runtime;
+      evalStep(c, { file: rel, applied: after !== null, desync });
     }
 
     const bashWrites = calls
@@ -172,13 +233,18 @@ export function replay(o: ReplayOpts) {
     let endCheck: any = null;
     const incompleteReasons: string[] = [];
     if (bashWrites.length) incompleteReasons.push("bash_src_write");
+    if (bashDeleted.some((b) => b.unresolved.length)) incompleteReasons.push("bash_delete_unresolved");
     if (o.end) {
       const mismatched: string[] = [];
       const deleted: string[] = [];
+      const deletedBoth: string[] = [];
       for (const rel of [...touched].sort()) {
         const endFile = join(o.end, rel);
-        if (!existsSync(endFile)) { deleted.push(rel); continue; }
-        if (readFileSync(endFile, "utf8") !== readFileSync(join(tree, rel), "utf8")) mismatched.push(rel);
+        const treeFile = join(tree, rel);
+        const inEnd = existsSync(endFile), inTree = existsSync(treeFile);
+        if (!inEnd && !inTree) { deletedBoth.push(rel); continue; }
+        if (!inEnd) { deleted.push(rel); continue; }
+        if (!inTree || readFileSync(endFile, "utf8") !== readFileSync(treeFile, "utf8")) mismatched.push(rel);
       }
       const endCode = new Set(codeFiles(o.end));
       const baseCode = new Set(codeFiles(o.base));
@@ -196,7 +262,7 @@ export function replay(o: ReplayOpts) {
       if (srcDiverged.length) incompleteReasons.push("end_src_divergence");
       if (verdictDiffers) incompleteReasons.push("end_verdict_differs");
       endCheck = {
-        end: o.end, compared: touched.size, mismatched, deleted_at_end: deleted, changed_without_replay: untracked,
+        end: o.end, compared: touched.size, mismatched, deleted_at_end: deleted, deleted_by_replay: deletedBoth, changed_without_replay: untracked,
         src_diverged: srcDiverged, end_critical_runtime: [...endKeys].sort(), end_verdict_differs: verdictDiffers,
       };
     }
@@ -230,6 +296,7 @@ export function replay(o: ReplayOpts) {
       replay_incomplete: incompleteReasons.length > 0,
       replay_incomplete_reasons: incompleteReasons,
       bash_src_writes: bashWrites,
+      bash_deletes: bashDeleted,
       end_check: endCheck,
       surfaced: SURFACED_RE.test(resultText),
       result_redacted: resultText.replace(/wyx/gi, "[redacted]"),

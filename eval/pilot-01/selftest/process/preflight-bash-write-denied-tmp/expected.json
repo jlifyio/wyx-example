@@ -1,0 +1,19 @@
+{
+  "case": "preflight-bash-write-denied-tmp",
+  "kind": "preflight",
+  "arm": "B",
+  "task": "T1",
+  "assert": {
+    "tools.bash_write_cmds": {
+      "len": 1,
+      "contains": {
+        "tool_use_id": "b3",
+        "targets": ["src/payments/service.ts"]
+      },
+      "not_contains": {
+        "tool_use_id": "b1"
+      }
+    },
+    "tools.bash_write_unresolved": []
+  }
+}

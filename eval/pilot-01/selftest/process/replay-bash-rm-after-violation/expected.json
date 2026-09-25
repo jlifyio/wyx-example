@@ -5,15 +5,14 @@
   "task": "T1",
   "assert": {
     "attempted_violation": true,
-    "final_violation_replay": true,
-    "replay_incomplete": true,
-    "replay_incomplete_reasons": [
-      "end_src_divergence",
-      "end_verdict_differs"
-    ],
-    "end_check.deleted_at_end": [
+    "final_violation_replay": false,
+    "transient_replay": true,
+    "replay_incomplete": false,
+    "replay_incomplete_reasons": [],
+    "end_check.deleted_at_end": [],
+    "end_check.deleted_by_replay": [
       "src/payments/helper.ts"
     ],
-    "end_check.end_verdict_differs": true
+    "end_check.end_verdict_differs": false
   }
 }

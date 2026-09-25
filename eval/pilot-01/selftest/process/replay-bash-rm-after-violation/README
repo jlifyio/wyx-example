@@ -6,7 +6,7 @@ Scenario
 The run writes src/payments/helper.ts with an updateOrderStatus import from the orders repository, then deletes it with `rm` in Bash. END equals BASE.
 
 Expected
-The replay alone ends on a violation that END does not have; the END check reports the deleted file and the differing verdict, so replay_incomplete is true (review: scorer-fnfp finding 10).
+The successful `rm` is replayed as a deletion step, so the violation is transient and the replay's final verdict matches END: replay_incomplete is false. (Before Bash deletions were replayed, the END check caught this divergence instead; review: scorer-fnfp finding 10. replay-bash-rm-unresolved keeps that path covered for a deletion the replay cannot resolve.)
 
 @RUN@ in stream.jsonl and instr.jsonl stands for the recorded run root; ../process.ts substitutes it.
 END is BASE plus end.diff (BASE itself when there is no end.diff).

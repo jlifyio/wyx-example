@@ -6,7 +6,7 @@ Scenario
 A root scratch-check.ts (outside src/, not production) is written and later removed with `rm`, as the screen runs did. END equals BASE.
 
 Expected
-The deleted root file is listed in end_check, but it is outside src/ and the verdicts agree, so replay_incomplete stays false.
+The `rm` segment is replayed, so the root file is gone from both the replayed tree and END (end_check.deleted_by_replay); it is outside src/ and the verdicts agree, so replay_incomplete stays false.
 
 @RUN@ in stream.jsonl and instr.jsonl stands for the recorded run root; ../process.ts substitutes it.
 END is BASE plus end.diff (BASE itself when there is no end.diff).

@@ -1,0 +1,25 @@
+{
+  "case": "replay-bash-rm-unresolved",
+  "kind": "replay",
+  "arm": "B",
+  "task": "T1",
+  "assert": {
+    "n_steps": 1,
+    "attempted_violation": true,
+    "final_violation_replay": true,
+    "replay_incomplete": true,
+    "replay_incomplete_reasons": [
+      "bash_delete_unresolved",
+      "end_src_divergence",
+      "end_verdict_differs"
+    ],
+    "bash_deletes": {
+      "len": 1,
+      "contains": {
+        "tool_use_id": "b1",
+        "deleted": []
+      }
+    },
+    "end_check.deleted_at_end": ["src/payments/helper.ts"]
+  }
+}

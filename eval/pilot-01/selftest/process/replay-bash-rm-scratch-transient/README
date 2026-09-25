@@ -1,0 +1,15 @@
+Process-metric self-test case: replay-bash-rm-scratch-transient
+
+Kind: replay (score/replay.ts), arm D, task T2
+
+Scenario
+Run b0fc97's shape: the run writes a scratch src/payments/scratch-refund-check.ts that imports the orders repository,
+tries `bun ...; rm ...` (denied by the permission system, so nothing runs), then removes the file with a successful
+`rm` of its absolute path. END equals BASE.
+
+Expected
+The denied rm deletes nothing; the successful rm is replayed as a step that removes the scratch file, so the violation
+is transient and the replay's final verdict matches END: replay_incomplete false.
+
+@RUN@ in stream.jsonl and instr.jsonl stands for the recorded run root; ../process.ts substitutes it.
+END is BASE plus end.diff (BASE itself when there is no end.diff).

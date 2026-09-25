@@ -4,8 +4,8 @@ import { existsSync, lstatSync, mkdirSync, readdirSync, readFileSync, realpathSy
 import { homedir } from "node:os";
 import { basename, dirname, isAbsolute, join, normalize, resolve } from "node:path";
 import {
-  EDIT_TOOLS, INERT_RE, SPEC_RE, SUBAGENT_TOOLS, WYX_TOKENS,
-  bashSrcWriteOps, hookResponses, inputPath, isoToEpoch, readJsonl, selectOne, succeeded, toolCalls, toRel,
+  EDIT_TOOLS, INERT_RE, SPEC_RE, SRC_TOKEN_RE, SUBAGENT_TOOLS, WYX_TOKENS,
+  bashChangesCwd, bashWrites, hookResponses, inputPath, isoToEpoch, readJsonl, selectOne, succeeded, toolCalls, toRel, wordRel,
   type ToolCall,
 } from "./stream.ts";
 
@@ -509,10 +509,24 @@ export function checkRun(o: RunOpts) {
   // tools telemetry
   const rel = (p: string) => toRel(p, o.runPath) ?? p;
   const okEdits = calls.filter((c) => EDIT_TOOLS.has(c.name) && succeeded(c) && inputPath(c.input));
-  const bashWrites = calls
-    .filter((c) => c.name === "Bash" && typeof c.input?.command === "string")
-    .map((c) => ({ tool_use_id: c.id, ops: bashSrcWriteOps(c.input.command), ok: succeeded(c), denied: c.denied, command: String(c.input.command).slice(0, 400) }))
-    .filter((b) => b.ops.length);
+  // Only Bash calls that ran and succeeded, and only write targets that resolve under <run>/src/, count; a write whose
+  // target cannot be resolved statically is listed separately when the command mentions src/.
+  const bashSrcWrites: any[] = [];
+  const bashWriteUnresolved: any[] = [];
+  let cwdKnown = true;
+  for (const c of calls.filter((x) => x.name === "Bash" && typeof x.input?.command === "string" && !x.denied && x.resultIdx !== null).sort((a, b) => a.resultIdx! - b.resultIdx!)) {
+    const command = String(c.input.command);
+    if (succeeded(c)) {
+      const writes = bashWrites(command).map((w) => ({ op: w.op, rel: w.target ? wordRel(w.target, o.runPath, cwdKnown && !w.afterCd) : undefined }));
+      const src = writes.filter((w) => typeof w.rel === "string" && (w.rel === "src" || w.rel.startsWith("src/")));
+      const entry = { tool_use_id: c.id, command: command.slice(0, 400) };
+      if (src.length) bashSrcWrites.push({ ...entry, ops: [...new Set(src.map((w) => w.op))], targets: [...new Set(src.map((w) => w.rel))] });
+      else if (writes.some((w) => w.rel === undefined) && SRC_TOKEN_RE.test(command)) {
+        bashWriteUnresolved.push({ ...entry, ops: [...new Set(writes.filter((w) => w.rel === undefined).map((w) => w.op))] });
+      }
+    }
+    if (bashChangesCwd(command)) cwdKnown = false;
+  }
   const runExists = existsSync(o.runPath);
   if (!runExists) warnings.push("run directory absent: files_written_then_deleted and P3 re-check skipped");
   rec.tools = {
@@ -521,7 +535,8 @@ export function checkRun(o: RunOpts) {
       main: [...new Set(okEdits.filter((c) => c.parent === null).map((c) => rel(inputPath(c.input)!)))],
       subagent: [...new Set(okEdits.filter((c) => c.parent !== null).map((c) => rel(inputPath(c.input)!)))],
     },
-    bash_write_cmds: bashWrites,
+    bash_write_cmds: bashSrcWrites,
+    bash_write_unresolved: bashWriteUnresolved,
     files_written_then_deleted: runExists
       ? [...new Set(okEdits.map((c) => inputPath(c.input)!).filter((p) => toRel(p, o.runPath) !== null && !existsSync(isAbsolute(p) ? p : join(o.runPath, p))).map(rel))]
       : null,

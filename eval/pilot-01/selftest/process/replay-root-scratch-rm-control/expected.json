@@ -7,7 +7,8 @@
     "attempted_violation": false,
     "replay_incomplete": false,
     "replay_incomplete_reasons": [],
-    "end_check.deleted_at_end": [
+    "end_check.deleted_at_end": [],
+    "end_check.deleted_by_replay": [
       "scratch-check.ts"
     ],
     "end_check.end_verdict_differs": false

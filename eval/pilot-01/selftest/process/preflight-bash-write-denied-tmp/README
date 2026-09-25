@@ -1,0 +1,14 @@
+Process-metric self-test case: preflight-bash-write-denied-tmp
+
+Kind: preflight (score/preflight.ts), arm B, task T1
+
+Scenario
+Run 93125f's shape: a heredoc write to /tmp that imports from src/, followed by a tsc run on a src/ file, is denied by
+the permission system; a successful command copies src/ to /tmp and writes a listing there; a successful `sed -i`
+edits src/payments/service.ts.
+
+Expected
+Only the sed command is a Bash write to src: the denied command and the successful writes outside src/ are not
+counted in tools.bash_write_cmds, and every write target resolved, so tools.bash_write_unresolved is empty.
+
+@RUN@ in stream.jsonl and instr.jsonl stands for the recorded run root; ../process.ts substitutes it.
