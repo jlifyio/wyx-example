@@ -1,0 +1,11 @@
+Process-metric self-test case: preflight-b-launch-rules
+
+Kind: preflight (score/preflight.ts), arm B, task T1 (pilot-02)
+
+Scenario
+A B run whose log shows the three rule files loaded at session_start (E rules leaked into a B run).
+
+Expected
+RULES_IN_INSTR as an isolation failure that discards the batch; the three loads are listed in instr.rule_loads; no E fields on a B record. The isolation flag itself was already raised by the old code; instr.rule_loads is new.
+
+@RUN@ in stream.jsonl and instr.jsonl stands for the recorded run root; ../process.ts substitutes it.

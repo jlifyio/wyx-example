@@ -1,0 +1,12 @@
+Process-metric self-test case: preflight-path-token-e
+
+Kind: preflight (score/preflight.ts), arm B, task T1 (pilot-02)
+
+Scenario
+The run root has a path component named "e" (/pilot-selftest/e/a1b2c3/shop), which reveals arm E the way b, c or d
+reveal the pilot-01 arms.
+
+Expected
+P3_PATH_TOKEN with path_token_hits exactly ["e"]. The old code knew only b, c and d and passed this path.
+
+@RUN@ in stream.jsonl and instr.jsonl stands for expected.json run_root, @HOME@ for the user's home; ../process.ts substitutes both.

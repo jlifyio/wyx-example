@@ -1,0 +1,13 @@
+Process-metric self-test case: preflight-user-rules-loaded
+
+Kind: preflight (score/preflight.ts), arm B, task T1 (pilot-02)
+
+Scenario
+The log shows a user-scope rule (~/.claude/rules/boundaries.md) loaded at session_start next to ~/.claude/CLAUDE.md.
+User-scope rules load in every arm and setup does not pin them, so a boundary rule there would reach B and E alike.
+
+Expected
+USER_RULES_LOADED as an isolation failure that discards the batch. The old code let every path under ~/.claude/ other
+than projects/ pass silently. The default run root raises no P3_PATH_TOKEN (control for preflight-path-token-e).
+
+@RUN@ in stream.jsonl and instr.jsonl stands for the recorded run root, @HOME@ for the user's home; ../process.ts substitutes both.

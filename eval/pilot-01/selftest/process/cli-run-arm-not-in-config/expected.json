@@ -1,0 +1,19 @@
+{
+  "case": "cli-run-arm-not-in-config",
+  "kind": "cli",
+  "config": "../pilot-02/config.env",
+  "tool": "preflight.ts",
+  "args": [
+    "run",
+    "--arm",
+    "C",
+    "--task",
+    "T1",
+    "--stream",
+    "/pilot-selftest/logs/a1b2c3.jsonl"
+  ],
+  "assert": {
+    "exit_code": 2,
+    "stderr_first_line": "arm C is not in the config's ARMS (B E)"
+  }
+}

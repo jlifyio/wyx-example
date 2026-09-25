@@ -1,0 +1,10 @@
+Process-metric self-test case: cli-run-arm-not-in-config
+
+Kind: cli (bun score/preflight.ts run), PILOT_CONFIG = pilot-02/config.env (ARMS B E)
+
+Scenario
+preflight.ts run mode is asked to check arm C, which pilot-02 does not have. batch, p2 and run/run-one.sh already refuse
+an arm outside the config's ARMS; run mode called armOf without the config's arms and accepted it.
+
+Expected
+Exit 2 (usage error) with "arm C is not in the config's ARMS (B E)" before any file is read, so the paths need not exist.

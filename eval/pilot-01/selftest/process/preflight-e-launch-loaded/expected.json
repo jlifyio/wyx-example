@@ -1,0 +1,23 @@
+{
+  "case": "preflight-e-launch-loaded",
+  "kind": "preflight",
+  "arm": "E",
+  "task": "T1",
+  "assert": {
+    "instr.e_delivered": true,
+    "instr.e_rule_not_loaded": [],
+    "failures": {
+      "not_contains": {
+        "code": "E_RULE_NOT_LOADED"
+      }
+    },
+    "instr.rule_loads": {
+      "len": 3,
+      "contains": {
+        "rule": ".claude/rules/payments.md",
+        "load_reason": "session_start"
+      }
+    },
+    "discards_batch": false
+  }
+}

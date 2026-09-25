@@ -1,0 +1,20 @@
+{
+  "case": "preflight-e-rule-missing",
+  "kind": "preflight",
+  "arm": "E",
+  "task": "T3",
+  "assert": {
+    "instr.e_delivered": false,
+    "instr.e_rule_not_loaded": [
+      "payments"
+    ],
+    "failures": {
+      "contains": {
+        "code": "E_RULE_NOT_LOADED"
+      },
+      "not_contains": {
+        "code": "E_DELIVERY_UNVERIFIABLE"
+      }
+    }
+  }
+}

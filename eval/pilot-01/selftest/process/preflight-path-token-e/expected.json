@@ -1,0 +1,17 @@
+{
+  "case": "preflight-path-token-e",
+  "kind": "preflight",
+  "arm": "B",
+  "task": "T1",
+  "run_root": "/pilot-selftest/e/a1b2c3/shop",
+  "assert": {
+    "failures": {
+      "contains": {
+        "code": "P3_PATH_TOKEN",
+        "isolation": true
+      }
+    },
+    "p3_recheck.path_token_hits": ["e"],
+    "isolation_ok": false
+  }
+}

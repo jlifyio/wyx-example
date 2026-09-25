@@ -1,0 +1,21 @@
+{
+  "case": "cli-p3-arm-not-in-config",
+  "kind": "cli",
+  "config": "../pilot-02/config.env",
+  "tool": "preflight.ts",
+  "args": [
+    "p3",
+    "--arm",
+    "C",
+    "--run-path",
+    "/pilot-selftest/runs/a1b2c3/shop",
+    "--base",
+    "/pilot-selftest/base/shop",
+    "--rules",
+    "/pilot-selftest/rules-e"
+  ],
+  "assert": {
+    "exit_code": 2,
+    "stderr_first_line": "arm C is not in the config's ARMS (B E)"
+  }
+}

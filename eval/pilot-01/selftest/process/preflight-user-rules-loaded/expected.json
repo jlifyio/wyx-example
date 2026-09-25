@@ -1,0 +1,20 @@
+{
+  "case": "preflight-user-rules-loaded",
+  "kind": "preflight",
+  "arm": "B",
+  "task": "T1",
+  "assert": {
+    "failures": {
+      "contains": {
+        "code": "USER_RULES_LOADED",
+        "isolation": true,
+        "discards_batch": true
+      },
+      "not_contains": {
+        "code": "P3_PATH_TOKEN"
+      }
+    },
+    "isolation_ok": false,
+    "discards_batch": true
+  }
+}

@@ -1,0 +1,11 @@
+Process-metric self-test case: preflight-e-launch-loaded
+
+Kind: preflight (score/preflight.ts), arm E, task T1 (pilot-02)
+
+Scenario
+All three E rules load at session_start (ts 5 s before the first assistant message began): the launch load expected for project rules without a paths frontmatter (the pilot-02 E probe verifies it on the real binary).
+
+Expected
+e_delivered true; no E_RULE_NOT_LOADED and no batch-discarding failure such as RULES_IN_INSTR (arm E may load rules). The old code treated any rule load outside arm D as RULES_IN_INSTR and had no e_delivered.
+
+@RUN@ in stream.jsonl and instr.jsonl stands for the recorded run root; ../process.ts substitutes it.

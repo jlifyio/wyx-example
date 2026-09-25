@@ -1,0 +1,11 @@
+Process-metric self-test case: preflight-e-loaded-after-first-message
+
+Kind: preflight (score/preflight.ts), arm E, task T1 (pilot-02)
+
+Scenario
+payments.md has a session_start entry, but its ts is 1 s after the first assistant message began, so it did not precede the first response.
+
+Expected
+e_delivered false, E_RULE_NOT_LOADED naming payments.
+
+@RUN@ in stream.jsonl and instr.jsonl stands for the recorded run root; ../process.ts substitutes it.

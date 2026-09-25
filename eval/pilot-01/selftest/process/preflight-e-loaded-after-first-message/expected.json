@@ -1,0 +1,17 @@
+{
+  "case": "preflight-e-loaded-after-first-message",
+  "kind": "preflight",
+  "arm": "E",
+  "task": "T1",
+  "assert": {
+    "instr.e_delivered": false,
+    "instr.e_rule_not_loaded": [
+      "payments"
+    ],
+    "failures": {
+      "contains": {
+        "code": "E_RULE_NOT_LOADED"
+      }
+    }
+  }
+}

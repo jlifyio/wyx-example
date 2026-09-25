@@ -1,0 +1,11 @@
+Process-metric self-test case: preflight-e-rule-missing
+
+Kind: preflight (score/preflight.ts), arm E, task T3 (pilot-02)
+
+Scenario
+Only orders.md and inventory.md load at session_start; payments.md never loads.
+
+Expected
+e_delivered false, E_RULE_NOT_LOADED naming payments.
+
+@RUN@ in stream.jsonl and instr.jsonl stands for the recorded run root; ../process.ts substitutes it.

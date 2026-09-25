@@ -1,0 +1,22 @@
+{
+  "case": "preflight-b-launch-rules",
+  "kind": "preflight",
+  "arm": "B",
+  "task": "T1",
+  "assert": {
+    "failures": {
+      "contains": {
+        "code": "RULES_IN_INSTR",
+        "isolation": true,
+        "discards_batch": true
+      }
+    },
+    "discards_batch": true,
+    "instr.rule_loads": {
+      "len": 3
+    },
+    "instr.e_delivered": {
+      "exists": false
+    }
+  }
+}
