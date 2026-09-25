@@ -1,0 +1,4 @@
+# Pilot-02 E rule pins, "<sha256>  <key>"; keys are relative to $EVAL_ROOT. Each body is the pilot-01 D rule minus its 4-line paths frontmatter.
+fb53c90e332b0f6772fb9b5e11e5ae35499bd43de5dcb094c3f44d409f727cf2  rules-e/orders.md
+922b2e5552fd11525ceb6f75260afdcf365b85945e5727f62cd68ec1db3466a7  rules-e/inventory.md
+f97ac7c7709a3475d5f713b2e48df01877240428e9506fcd6bdc52d3f74a08fe  rules-e/payments.md
