@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Run the pilot-01 scored batch (P5): key/key.csv with opaque ids and a seeded within-wave launch order, then K waves
-# of TASKS x ARMS cells launched concurrently through xargs -P; a stream without an init event is rerun once.
+# Run the scored batch of the selected pilot (P5): key/key.csv with opaque ids and a seeded within-wave launch order,
+# then K waves of TASKS x ARMS cells launched concurrently through xargs -P; a stream without an init event is rerun once.
 # Usage: run-batch.sh [EVAL_ROOT]   (EVAL_ROOT may come from the environment; DRY_RUN=1 prints commands only)
 set -euo pipefail
 . "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
@@ -8,6 +8,7 @@ set -euo pipefail
 [ $# -le 1 ] || die "usage: run-batch.sh [EVAL_ROOT]"
 load_config
 resolve_root "${1:-}"
+check_manifest_config
 export DRY_RUN=${DRY_RUN:-0}
 PAR=$((${#TASK_LIST[@]} * ${#ARM_LIST[@]}))
 gate() { if [ "$DRY_RUN" = 1 ]; then note "DRY_RUN: a real batch would refuse: $*"; else die "$*"; fi; }

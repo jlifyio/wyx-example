@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# Prepare a pilot-01 EVAL_ROOT (P0): neutral root, BASE via fixture/make-fixture.sh, frozen wyx copy, D rules via
-# fixture/gen-d-rules.sh, scorer dependencies and selftest, then manifest.json. Stdout is only the EVAL_ROOT path.
+# Prepare an EVAL_ROOT for the selected pilot (P0): neutral root, BASE via fixture/make-fixture.sh, frozen wyx copy, D rules via
+# fixture/gen-d-rules.sh, E rules via fixture/gen-e-rules.sh when ARMS has E, scorer dependencies and selftest, then
+# manifest.json (records the config). Stdout is only the EVAL_ROOT path.
 # Usage: setup.sh [EVAL_ROOT]   (default: $EVAL_ROOT, else a new mktemp -d from EVAL_ROOT_TEMPLATE)
 set -euo pipefail
 . "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
@@ -123,6 +124,20 @@ for mod in $D_MODULES; do
   [ "$got" = "$want" ] || die "rules/$mod.md sha256 $got differs from expected.sha256 $want"
   RULE_SHA[$mod]=$got
 done
+# E rules (pilot-02): the D bodies without frontmatter, pinned in expected.sha256 next to the selected config.
+declare -A E_RULE_SHA=()
+if has_arm E; then
+  [ -f "$HARNESS/fixture/gen-e-rules.sh" ] || die "missing fixture/gen-e-rules.sh"
+  note "generating E rules with fixture/gen-e-rules.sh"
+  if ! bash "$HARNESS/fixture/gen-e-rules.sh" "$ROOT" "$CONFIG_DIR/expected.sha256" >"$ROOT/logs/gen-e-rules.out"; then
+    cat "$ROOT/logs/gen-e-rules.out" >&2
+    die "fixture/gen-e-rules.sh failed"
+  fi
+  cat "$ROOT/logs/gen-e-rules.out" >&2
+  erules=$(cd "$ROOT/rules-e" && find . -mindepth 1 -printf '%P\n' | LC_ALL=C sort)
+  [ "$erules" = $'inventory.md\norders.md\npayments.md' ] || die "unexpected files in $ROOT/rules-e:"$'\n'"$erules"
+  for mod in $D_MODULES; do E_RULE_SHA[$mod]=$(sha_file "$ROOT/rules-e/$mod.md"); done
+fi
 declare -A CONCEPT_SHA=()
 for mod in $D_MODULES; do CONCEPT_SHA[$mod]=$(sha_file "$BASE/src/$mod/CONCEPT.md"); done
 
@@ -166,6 +181,7 @@ harness_status=$(git -C "$HARNESS_REPO" status --porcelain -- "${harness_rel%%/*
 harness_clean=true
 [ -z "$harness_status" ] || harness_clean=false
 [ "$harness_clean" = true ] || note "WARNING: git status --porcelain -- ${harness_rel%%/*} is not empty in $HARNESS_REPO"
+user_rules_absent
 home_claude_md=$(home_sha "$HOME/.claude/CLAUDE.md")
 home_settings=$(home_sha "$HOME/.claude/settings.json")
 
@@ -176,6 +192,11 @@ obj() { # name=value pairs -> JSON object of strings
 wyx_git_trees=$(obj "${tree_pairs[@]}")
 expected_file_sha=$(sha_file "$EXPECTED")
 rules_json=$(obj orders="${RULE_SHA[orders]}" inventory="${RULE_SHA[inventory]}" payments="${RULE_SHA[payments]}")
+e_rules_json='{}'
+if has_arm E; then
+  e_rules_json=$(obj orders="${E_RULE_SHA[orders]}" inventory="${E_RULE_SHA[inventory]}" payments="${E_RULE_SHA[payments]}")
+fi
+config_sha=$(sha_file "$CONFIG")
 concept_json=$(obj orders="${CONCEPT_SHA[orders]}" inventory="${CONCEPT_SHA[inventory]}" payments="${CONCEPT_SHA[payments]}")
 prompt_pairs=()
 for t in "${TASK_LIST[@]}"; do prompt_pairs+=("$t=${PROMPT_SHA[$t]}"); done
@@ -201,6 +222,8 @@ jq -n \
   --arg typescript "$ts_ver" --arg selftest "$selftest" \
   --arg home_claude_md "$home_claude_md" --arg home_settings "$home_settings" \
   --arg seed "$SEED" --arg k "$K" --arg tasks "$TASKS" --arg arms "$ARMS" \
+  --arg config_path "$CONFIG" --arg config_sha256 "$config_sha" --arg pilot_name "$PILOT_NAME" \
+  --argjson e_rules "$e_rules_json" --arg rules_e_dir "$ROOT/rules-e" \
   '{created_at: $created_at, eval_root: $eval_root,
     harness: {dir: $harness_dir, repo: $harness_repo, sha: $harness_sha, clean: $harness_clean},
     fixture_sha: $fixture_sha, expected_sha256_file: $expected_sha256_file, overlay_sha256: $overlay,
@@ -217,12 +240,15 @@ jq -n \
             bun: $bun, jq: $jq, git: $git, tar: $tar, bash: $bash, typescript: $typescript},
     selftest: $selftest,
     home: {claude_md_sha256: $home_claude_md, settings_json_sha256: $home_settings},
-    seed: $seed, k: ($k | tonumber), tasks: ($tasks | split(" ")), arms: ($arms | split(" "))}' \
+    seed: $seed, k: ($k | tonumber), tasks: ($tasks | split(" ")), arms: ($arms | split(" ")),
+    config: {name: $pilot_name, path: $config_path, sha256: $config_sha256}}
+    + (if $e_rules == {} then {} else {e_rules: $e_rules, rules_e_dir: $rules_e_dir} end)' \
   >"$ROOT/manifest.json.tmp"
 mv -- "$ROOT/manifest.json.tmp" "$ROOT/manifest.json"
 
 # Freeze the arm C plugin copy and the D rule sources like BASE; run-one.sh and preflight.ts re-check their hashes.
 chmod -R a-w -- "$WYX_DIR" "$ROOT/rules"
+if has_arm E; then chmod -R a-w -- "$ROOT/rules-e"; fi
 
 if [ "$stage0_required" = true ]; then
   note "STAGE0_REQUIRED base_tree=$base_tree differs from BASE_TREE_EXPECTED=$BASE_TREE_EXPECTED; run run/stage0.sh (P1) before the batch"

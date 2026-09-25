@@ -1,4 +1,5 @@
-# Shared helpers for the pilot-01 runner scripts (sourced by setup.sh, run-one.sh, run-batch.sh, probe.sh, stage0.sh).
+# Shared helpers for the pilot runner scripts (sourced by setup.sh, run-one.sh, run-batch.sh, probe.sh, stage0.sh);
+# PILOT_CONFIG selects the pilot's config.env, default pilot-01's.
 
 shopt -s inherit_errexit
 unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE GIT_OBJECT_DIRECTORY GIT_ALTERNATE_OBJECT_DIRECTORIES
@@ -8,6 +9,9 @@ HARNESS=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)
 RUNNER="$HARNESS/run"
 SETTINGS="$RUNNER/settings.json"
 EXPECTED="$HARNESS/fixture/expected.sha256"
+# The pilot config: PILOT_CONFIG selects another pilot's config.env (e.g. ../pilot-02/config.env); default pilot-01's.
+DEFAULT_CONFIG="$HARNESS/config.env"
+CONFIG=${PILOT_CONFIG:-$DEFAULT_CONFIG}
 WYX_VERSION_PINNED=0.27.0
 D_MODULES="orders inventory payments"
 ENV_WHITELIST="HOME USER LANG TERM PATH EVAL_INSTR_LOG ENABLE_CODE_SECURITY_REVIEW ENABLE_STOP_REVIEW ENABLE_COMMIT_REVIEW DISABLE_AUTOUPDATER"
@@ -48,14 +52,21 @@ expect_sha() {
 }
 
 load_config() {
-  [ -f "$HARNESS/config.env" ] || die "missing $HARNESS/config.env"
+  [ -f "$CONFIG" ] || die "missing config $CONFIG"
+  CONFIG=$(realpath -e -- "$CONFIG") || die "cannot resolve $CONFIG"
+  # Exported so child scripts (run-one.sh under xargs, fixture scripts, bun) read the same config.
+  export PILOT_CONFIG=$CONFIG
+  CONFIG_DIR=$(dirname -- "$CONFIG")
+  # Optional keys come from the file only, never from the caller's environment (TS config.ts reads the file alone).
+  unset PILOT_NAME CONTRASTS DECISION_RULE
   # shellcheck source=/dev/null
-  . "$HARNESS/config.env"
+  . "$CONFIG"
   local v t a
   for v in FIXTURE_SHA WYX_SHA WYX_REPO MODEL PROBE_MODEL CLAUDE_CODE_VERSION BUN_VERSION SEED K TASKS ARMS \
     BASE_TREE_EXPECTED EVAL_ROOT_TEMPLATE; do
     [ -n "${!v-}" ] || die "config.env does not set $v"
   done
+  PILOT_NAME=${PILOT_NAME:-pilot-01}
   [[ $FIXTURE_SHA =~ ^[0-9a-f]{40}$ ]] || die "FIXTURE_SHA is not a 40-hex sha"
   [[ $WYX_SHA =~ ^[0-9a-f]{40}$ ]] || die "WYX_SHA is not a 40-hex sha"
   [[ $BASE_TREE_EXPECTED =~ ^[0-9a-f]{40}$ ]] || die "BASE_TREE_EXPECTED is not a 40-hex sha"
@@ -63,8 +74,25 @@ load_config() {
   read -r -a TASK_LIST <<<"$TASKS"
   read -r -a ARM_LIST <<<"$ARMS"
   for t in "${TASK_LIST[@]}"; do case $t in T1 | T2 | T3) ;; *) die "unknown task in TASKS: $t" ;; esac; done
-  for a in "${ARM_LIST[@]}"; do case $a in B | C | D) ;; *) die "unknown arm in ARMS: $a" ;; esac; done
+  for a in "${ARM_LIST[@]}"; do case $a in B | C | D | E) ;; *) die "unknown arm in ARMS: $a" ;; esac; done
   WYX_SHORT=${WYX_SHA:0:7}
+}
+has_arm() { [[ " ${ARM_LIST[*]} " == *" $1 "* ]]; }
+
+# After resolve_root: the selected config must be the one setup recorded (path-independent sha256), and its K, TASKS
+# and ARMS must equal the manifest's; a manifest from before config recording is accepted only with the default config.
+check_manifest_config() {
+  local got want
+  got=$(sha_file "$CONFIG")
+  want=$(jq -r '.config.sha256 // empty' "$ROOT/manifest.json") || die "cannot read manifest.json"
+  if [ -n "$want" ]; then
+    [ "$got" = "$want" ] || die "selected config $CONFIG (sha256 $got) is not the one setup recorded ($(mf .config.path), $want); set PILOT_CONFIG to it"
+  else
+    [ "$CONFIG" = "$(realpath -e -- "$DEFAULT_CONFIG")" ] || die "manifest.json records no config, so only the default $DEFAULT_CONFIG may be selected"
+  fi
+  [ "$(mf .k)" = "$K" ] || die "config K=$K differs from manifest k=$(mf .k)"
+  [ "$(mf '.tasks | join(" ")')" = "$TASKS" ] || die "config TASKS='$TASKS' differs from the manifest's"
+  [ "$(mf '.arms | join(" ")')" = "$ARMS" ] || die "config ARMS='$ARMS' differs from the manifest's"
 }
 
 # Sets ROOT from $1, else $EVAL_ROOT; requires a completed setup (manifest.json).
@@ -109,8 +137,15 @@ path_tokens_ok() {
     case $lc in *"$tok"*) return 1 ;; esac
   done
   IFS=/ read -r -a parts <<<"$lc"
-  for part in "${parts[@]}"; do case $part in b | c | d) return 1 ;; esac; done
+  for part in "${parts[@]}"; do case $part in b | c | d | e) return 1 ;; esac; done
   return 0
+}
+# User-scope rules (~/.claude/rules) load in every arm and setup does not pin them, so refuse while any exist.
+user_rules_absent() {
+  local d=$HOME/.claude/rules found
+  [ -e "$d" ] || [ -L "$d" ] || return 0
+  found=$(find -L "$d" -mindepth 1 -print -quit) || die "cannot list $d"
+  [ -z "$found" ] || die "user-scope rules exist under $d ($found); they would load in every arm"
 }
 slug() { printf '%s' "${1//[^A-Za-z0-9]/-}"; }
 

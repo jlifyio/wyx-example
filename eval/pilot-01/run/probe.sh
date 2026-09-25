@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Run the P2 harness probes: one run per arm with PROBE_MODEL and the fixed probe prompt, prepared exactly like scored
-# runs (run-one.sh, task P2). Probe ids are 'p' + 6 hex, recorded in key/probes.csv and never in key/key.csv.
+# Run the P2 harness probes: one run per configured arm with PROBE_MODEL and the fixed probe prompt, prepared exactly
+# like scored runs (run-one.sh, task P2). Probe ids are 'p' + 6 hex, recorded in key/probes.csv and never in key/key.csv.
 # Usage: probe.sh [EVAL_ROOT]   (EVAL_ROOT may come from the environment; DRY_RUN=1 prints commands only)
 set -euo pipefail
 . "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
@@ -8,6 +8,7 @@ set -euo pipefail
 [ $# -le 1 ] || die "usage: probe.sh [EVAL_ROOT]"
 load_config
 resolve_root "${1:-}"
+check_manifest_config
 export DRY_RUN=${DRY_RUN:-0}
 PKEY="$ROOT/key/probes.csv"
 

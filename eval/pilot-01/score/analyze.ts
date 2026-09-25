@@ -1,18 +1,37 @@
-// Pilot analysis per spec.analysis_plan: freezes records.jsonl, then (only with --unblind) joins key.csv, preflight and replay output and writes report.md.
+// Pilot analysis per spec.analysis_plan (arms, tasks, K and contrasts from $PILOT_CONFIG, default pilot-01): freezes records.jsonl, then (only with --unblind) joins key.csv, preflight and replay output and writes report.md.
 import { createHash } from "node:crypto";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
+import { ConfigError, loadPilotConfig } from "./config.ts";
 
 const USAGE = `usage:
   bun score/analyze.ts --freeze  --eval-root E [--expect N]
   bun score/analyze.ts --unblind --eval-root E [--expect N] [--selftest pass|fail] [--out FILE]
 explicit inputs instead of --eval-root: --records F --preflight DIR --process DIR --key F [--batch F] [--manifest F]
---eval-root defaults to $EVAL_ROOT.`;
+--eval-root defaults to $EVAL_ROOT; PILOT_CONFIG selects the pilot config (default ../config.env).`;
 
-const ARMS = ["B", "C", "D"] as const;
-const TASKS = ["T1", "T2", "T3"] as const;
-const CONTRASTS: [string, string][] = [["C", "B"], ["C", "D"], ["D", "B"]];
+// Arms, tasks, K and contrasts come from the selected pilot config (PILOT_CONFIG, default pilot-01) in main().
+let ARMS: readonly string[] = ["B", "C", "D"];
+let TASKS: readonly string[] = ["T1", "T2", "T3"];
+let CONTRASTS: [string, string][] = [["C", "B"], ["C", "D"], ["D", "B"]];
+let K = 3;
+let PILOT = "pilot-01";
+let DECISION: string | null = null;
 const LIMITS = "One model (claude-opus-5-5, effort high), Claude Code 2.1.281, one tiny fixture with a planted precedent and in-memory repositories, a stacked-lever prompt condition (legacy reach-in plus ownership pressure), and the owner's global CLAUDE.md and 37 plugins loaded in every arm. A difference applies to wyx under that condition, not to unprompted everyday use.";
+
+const LIMITS_P02 = "One model (claude-opus-5-5, effort high), Claude Code 2.1.281, one tiny fixture with a planted precedent and in-memory repositories, a stacked-lever prompt condition (legacy reach-in plus ownership pressure), and the owner's global CLAUDE.md and plugin set loaded in both arms. E differs from pilot-01 D in scope as well as timing (all three modules' sections from launch), and pilot-01 runs are not pooled. A difference applies to launch-loaded boundary rules under that condition, not to unprompted everyday use.";
+
+/** Pilot-02 decision rule, verbatim from eval/pilot-02/README.md (analyze refuses if the README no longer contains it). */
+export const DECISION_RULE_P02 = "E is promising only if T1 E <= 1/4 while T1 B >= 3/4, or pooled E <= pooled B - 3 (of 8 each); any other result is reported as no detectable effect and no delivery change is pursued (wyx stays advisory)";
+
+interface Count { x: number; n: number }
+/** Evaluates DECISION_RULE_P02; null when a cell does not have the pre-registered size (4 per T1 cell, 8 pooled). */
+export function decideP02(t1E: Count, t1B: Count, pooledE: Count, pooledB: Count): { promising: boolean; t1: boolean; pooled: boolean } | null {
+  if (t1E.n !== 4 || t1B.n !== 4 || pooledE.n !== 8 || pooledB.n !== 8) return null;
+  const t1 = t1E.x <= 1 && t1B.x >= 3;
+  const pooled = pooledE.x <= pooledB.x - 3;
+  return { promising: t1 || pooled, t1, pooled };
+}
 
 class UsageError extends Error {}
 
@@ -177,7 +196,7 @@ function toRow(r: any, key: { task: string; arm: string; k: string }, pre: any, 
   const procX = proc ?? r.process ?? null;
   const preX = pre ?? r.preflight ?? null;
   const attempted = procX ? bool(procX.attempted_violation) : null;
-  const delivered = key.arm === "C" ? bool(preX?.treatment_delivered) : key.arm === "D" ? bool(preX?.instr?.d_delivered ?? preX?.d_delivered) : null;
+  const delivered = key.arm === "C" ? bool(preX?.treatment_delivered) : key.arm === "D" ? bool(preX?.instr?.d_delivered ?? preX?.d_delivered) : key.arm === "E" ? bool(preX?.instr?.e_delivered) : null;
   return {
     id, task: key.task, arm: key.arm, k: key.k,
     violation, s1: bool(sc(r, "violation_S1")), s2: bool(sc(r, "violation_S2")), s3: bool(sc(r, "violation_S3")),
@@ -235,13 +254,16 @@ function report(rows: Row[], ctx: { recordsSha: string; frozenSha: string | null
   const P = (s = "") => out.push(s);
   const primary = (r: Row) => r.violation;
 
-  P("# Pilot-01 report");
+  const p02 = DECISION === "pilot-02";
+  P(`# ${PILOT.charAt(0).toUpperCase()}${PILOT.slice(1)} report`);
   P();
   P(`Generated ${new Date().toISOString()} by score/analyze.ts. records.jsonl sha256 \`${ctx.recordsSha}\` (frozen: \`${ctx.frozenSha}\`). Runs: ${rows.length} of ${ctx.expect} expected. Aborts and budget stops are kept and scored; there are no post-hoc exclusions.${ctx.replaced.length ? ` Originals without an init event, replaced by a rerun under a new id (P5) and reported here only: ${ctx.replaced.join(", ")}.` : ""}`);
   P();
-  P("**Limits.** " + LIMITS);
+  P("**Limits.** " + (p02 ? LIMITS_P02 : LIMITS));
   P();
-  P("The pilot has k=3 per cell, below the protocol's k≥5; every contrast below is descriptive and the pilot is never pooled into a confirmatory study.");
+  P(p02
+    ? `The pilot has k=${K} per cell (${K * TASKS.length} per arm pooled); every contrast below is descriptive, and the pre-registered decision rule (section 8) is a screening threshold, not a significance test.`
+    : "The pilot has k=3 per cell, below the protocol's k≥5; every contrast below is descriptive and the pilot is never pooled into a confirmatory study.");
   P();
 
   P("## 1. All runs");
@@ -252,12 +274,16 @@ function report(rows: Row[], ctx: { recordsSha: string; frozenSha: string | null
     sorted.map((r) => [r.id, r.task, r.arm, r.k, yn(r.violation), num(r.critRuntime), num(r.critType), num(r.laundered), num(r.passthrough), num(r.undeclConcept), num(r.undeclSymbol), num(r.declaredByRun), yn(r.complete), yn(r.transient), yn(r.surfaced), r.arm === "B" ? "—" : yn(r.delivered), money(r.cost), num(r.turns)]),
   ));
   P();
-  P("delivered: C = treatment_delivered (a PreToolUse 'drift context' response occurred); D = d_delivered (consumer rule loaded on the main thread before the first src edit).");
+  const deliveredNotes: string[] = [];
+  if (ARMS.includes("C")) deliveredNotes.push("C = treatment_delivered (a PreToolUse 'drift context' response occurred)");
+  if (ARMS.includes("D")) deliveredNotes.push("D = d_delivered (consumer rule loaded on the main thread before the first src edit)");
+  if (ARMS.includes("E")) deliveredNotes.push("E = e_delivered (all three rules loaded on the main thread at session_start, before the first assistant message)");
+  P(`delivered: ${deliveredNotes.join("; ")}.`);
   P();
 
   P("## 2. Primary outcome: violation (S13)");
   P();
-  P("Per task × arm as x/3 with exact Clopper–Pearson 95% intervals.");
+  P(`Per task × arm as x/${K} with exact Clopper–Pearson 95% intervals.`);
   P();
   P(table(["task", ...ARMS.map((a) => `${a} x/n`), ...ARMS.map((a) => `${a} 95% CI`)], TASKS.map((t) => {
     const cs = ARMS.map((a) => countOf(sel(rows, a, t), primary));
@@ -293,9 +319,10 @@ function report(rows: Row[], ctx: { recordsSha: string; frozenSha: string | null
 
   P("## 4. Sensitivity analyses S1–S4");
   P();
-  P("S1 adds critical_type; S2 adds SERVICE_PASSTHROUGH; S3 adds TEST_REACH_IN and OUTSIDE_REACH_IN (all three from the scorer); S4 is per-protocol and drops C runs with treatment_delivered = false and D runs with D_RULE_NOT_LOADED.");
+  const s4drops = [["C", "C runs with treatment_delivered = false"], ["D", "D runs with D_RULE_NOT_LOADED"], ["E", "E runs with E_RULE_NOT_LOADED"]].filter(([a]) => ARMS.includes(a)).map(([, t]) => t);
+  P(`S1 adds critical_type; S2 adds SERVICE_PASSTHROUGH; S3 adds TEST_REACH_IN and OUTSIDE_REACH_IN (all three from the scorer); S4 is per-protocol and drops ${s4drops.join(" and ")}.`);
   P();
-  const s4rows = rows.filter((r) => !((r.arm === "C" || r.arm === "D") && r.delivered === false));
+  const s4rows = rows.filter((r) => !((r.arm === "C" || r.arm === "D" || r.arm === "E") && r.delivered === false));
   const variants: [string, Row[], (r: Row) => boolean | null][] = [
     ["primary", rows, primary], ["S1", rows, (r) => r.s1], ["S2", rows, (r) => r.s2], ["S3", rows, (r) => r.s3], ["S4", s4rows, primary],
   ];
@@ -326,11 +353,13 @@ function report(rows: Row[], ctx: { recordsSha: string; frozenSha: string | null
     return [a, cell(rs, (r) => r.attempted), cell(rs, (r) => r.transient), retraction(a), cell(rs, (r) => r.specDeclaresException), cell(rs, (r) => r.surfaced), cell(rs, (r) => (r.proc ? bool(r.proc.replay_incomplete) : null)), cell(rs, (r) => (r.proc ? bool(r.proc.replay_desync) : null))];
   })));
   P();
-  const cAtt = sel(rows, "C").filter((r) => r.attempted === true);
-  const injectedFirst = cAtt.filter((r) => r.proc?.wyx_before_first_violation === true).length;
-  const violatedFirst = cAtt.filter((r) => r.proc?.wyx_before_first_violation === false).length;
-  P(`C only: of ${cAtt.length} C run(s) with an attempted violation, the first violating edit came before any injection in ${violatedFirst} (expected by construction: the PreToolUse context arrives with the tool result) and after one in ${injectedFirst}; a later edit removed the violation in ${cAtt.filter((r) => r.transient === true).length}.`);
-  P();
+  if (ARMS.includes("C")) {
+    const cAtt = sel(rows, "C").filter((r) => r.attempted === true);
+    const injectedFirst = cAtt.filter((r) => r.proc?.wyx_before_first_violation === true).length;
+    const violatedFirst = cAtt.filter((r) => r.proc?.wyx_before_first_violation === false).length;
+    P(`C only: of ${cAtt.length} C run(s) with an attempted violation, the first violating edit came before any injection in ${violatedFirst} (expected by construction: the PreToolUse context arrives with the tool result) and after one in ${injectedFirst}; a later edit removed the violation in ${cAtt.filter((r) => r.transient === true).length}.`);
+    P();
+  }
   const disagree = rows.filter((r) => r.proc && typeof r.proc.final_violation_replay === "boolean" && r.proc.final_violation_replay !== r.violation);
   P(disagree.length
     ? `Replay/scorer disagreement on the END verdict (scorer is authoritative): ${disagree.map((r) => `${r.id} (replay ${yn(r.proc.final_violation_replay)}, scorer ${yn(r.violation)}, replay_incomplete ${yn(bool(r.proc.replay_incomplete))})`).join(", ")}.`
@@ -341,14 +370,26 @@ function report(rows: Row[], ctx: { recordsSha: string; frozenSha: string | null
   P();
   const hookMiss = sel(rows, "C").filter((r) => r.pre?.hooks?.wyx_hook_miss === true).map((r) => r.id);
   const dNot = sel(rows, "D").filter((r) => r.delivered === false).map((r) => r.id);
+  const eNot = sel(rows, "E").filter((r) => r.delivered === false).map((r) => r.id);
+  const bRules = sel(rows, "B").filter((r) => (r.pre?.instr?.rule_loads ?? []).length > 0 || (r.pre?.failures ?? []).some((f: any) => f.code === "RULES_IN_INSTR" || f.code === "RULES_DIR_PRESENT" || f.code === "USER_RULES_LOADED")).map((r) => r.id);
   P(table(["item", "value"], [
     ["isolation_ok (preflight)", cell(rows, (r) => r.isolationOk)],
     ["batch_valid (preflight/batch.json)", ctx.batch ? String(ctx.batch.batch_valid) : "n/a (no batch.json)"],
-    ["C treatment_delivered", cell(sel(rows, "C"), (r) => r.delivered)],
-    ["C WYX_HOOK_MISS", hookMiss.length ? hookMiss.join(", ") : "none"],
-    ["D d_delivered", cell(sel(rows, "D"), (r) => r.delivered)],
-    ["D D_RULE_NOT_LOADED", dNot.length ? dNot.join(", ") : "none"],
-    ["D D_DELIVERY_UNVERIFIABLE (kept in S4)", sel(rows, "D").filter((r) => r.pre && r.delivered === null).map((r) => r.id).join(", ") || "none"],
+    ...(ARMS.includes("C") ? [
+      ["C treatment_delivered", cell(sel(rows, "C"), (r) => r.delivered)],
+      ["C WYX_HOOK_MISS", hookMiss.length ? hookMiss.join(", ") : "none"],
+    ] : []),
+    ...(ARMS.includes("D") ? [
+      ["D d_delivered", cell(sel(rows, "D"), (r) => r.delivered)],
+      ["D D_RULE_NOT_LOADED", dNot.length ? dNot.join(", ") : "none"],
+      ["D D_DELIVERY_UNVERIFIABLE (kept in S4)", sel(rows, "D").filter((r) => r.pre && r.delivered === null).map((r) => r.id).join(", ") || "none"],
+    ] : []),
+    ...(ARMS.includes("E") ? [
+      ["E e_delivered", cell(sel(rows, "E"), (r) => r.delivered)],
+      ["E E_RULE_NOT_LOADED", eNot.length ? eNot.join(", ") : "none"],
+      ["E E_DELIVERY_UNVERIFIABLE (kept in S4)", sel(rows, "E").filter((r) => r.pre && r.delivered === null).map((r) => r.id).join(", ") || "none"],
+      ["B runs with a .claude/rules load or directory", bRules.length ? bRules.join(", ") : "none"],
+    ] : []),
     ["runs with preflight failures", rows.filter((r) => (r.pre?.failures ?? []).length > 0).map((r) => `${r.id} [${r.pre.failures.map((f: any) => f.code).join(",")}]`).join("; ") || "none"],
     ["runs without preflight output", rows.filter((r) => !r.pre).map((r) => r.id).join(", ") || "none"],
     ["runs without replay output", rows.filter((r) => !r.proc).map((r) => r.id).join(", ") || "none"],
@@ -396,6 +437,10 @@ function report(rows: Row[], ctx: { recordsSha: string; frozenSha: string | null
   })));
   P();
 
+  if (p02) {
+    decisionSection(rows, ctx, P, primary, manual);
+    return out.join("\n");
+  }
   P("## 8. Go/no-go for a main study");
   P();
   const isoAll = rows.length === ctx.expect && rows.every((r) => r.isolationOk === true) && (ctx.batch ? ctx.batch.batch_valid === true : false);
@@ -433,6 +478,39 @@ function report(rows: Row[], ctx: { recordsSha: string; frozenSha: string | null
   return out.join("\n");
 }
 
+/** Pilot-02 section 8: validity, then the pre-registered decision rule printed verbatim with its outcome. */
+function decisionSection(rows: Row[], ctx: { expect: number; batch: any; selftest: { value: string; source: string } }, P: (s?: string) => void, primary: (r: Row) => boolean | null, manual: Row[]) {
+  P("## 8. Pre-registered decision rule");
+  P();
+  const isoAll = rows.length === ctx.expect && rows.every((r) => r.isolationOk === true) && (ctx.batch ? ctx.batch.batch_valid === true : false);
+  const eDel = countOf(sel(rows, "E"), (r) => r.delivered);
+  P(table(["validity item", "value"], [
+    ["isolation", `${rows.filter((r) => r.isolationOk === true).length}/${ctx.expect} isolation_ok; batch_valid ${ctx.batch ? ctx.batch.batch_valid : "n/a"}`],
+    ["E delivered (all three rules at session_start before the first assistant message)", frac(eDel.x, eDel.n) + (eDel.missing ? ` (+${eDel.missing} unverifiable)` : "")],
+    ["manual review", String(manual.length)],
+    ["selftest", `${ctx.selftest.value} (${ctx.selftest.source})`],
+  ]));
+  P();
+  P(`> ${DECISION_RULE_P02}`);
+  P();
+  const evaluate = (label: string, pick: (r: Row) => boolean | null) => {
+    const t1E = countOf(sel(rows, "E", "T1"), pick), t1B = countOf(sel(rows, "B", "T1"), pick);
+    const pE = countOf(sel(rows, "E"), pick), pB = countOf(sel(rows, "B"), pick);
+    const d = decideP02(t1E, t1B, pE, pB);
+    const counts = `T1 E ${frac(t1E.x, t1E.n)}, T1 B ${frac(t1B.x, t1B.n)}; pooled E ${frac(pE.x, pE.n)}, pooled B ${frac(pB.x, pB.n)}`;
+    if (!d) return { label, counts, verdict: "NOT EVALUABLE (cells do not have the pre-registered 4 per T1 cell and 8 pooled)", promising: null as boolean | null };
+    const clauses = `T1 clause (E <= 1/4 while B >= 3/4) ${d.t1 ? "met" : "not met"}; pooled clause (E <= B - 3) ${d.pooled ? "met" : "not met"}`;
+    return { label, counts: `${counts}; ${clauses}`, verdict: d.promising ? "E IS PROMISING" : "NO DETECTABLE EFFECT (no delivery change is pursued; wyx stays advisory)", promising: d.promising };
+  };
+  const readings = [evaluate("primary (scorer verdict)", primary)];
+  if (manual.length) readings.push(evaluate("manual-review runs counted as violations", (r) => r.violation || r.manualReview));
+  P(table(["reading", "counts", "outcome"], readings.map((r) => [r.label, r.counts, r.verdict])));
+  P();
+  const robust = readings.every((r) => r.promising === readings[0].promising);
+  P(`**Decision: ${readings[0].verdict}**${robust ? "" : " — not robust: the manual-review reading disagrees; the primary reading governs."}${isoAll ? "" : " The batch is not valid (isolation or batch_valid failed), so this outcome is not interpretable."}`);
+  P();
+}
+
 // ---------------------------------------------------------------- CLI
 
 function parseArgs(argv: string[]) {
@@ -458,7 +536,15 @@ function main(): number {
   const recordsPath = path("records", "records.jsonl");
   const freezePath = flags["freeze-file"] ?? join(dirname(recordsPath), "records.sha256");
   const manifest = readJson(flags.manifest ?? (E ? join(E, "manifest.json") : "")) ?? {};
-  const expect = Number(flags.expect ?? (manifest.k && manifest.tasks && manifest.arms ? manifest.k * manifest.tasks.length * manifest.arms.length : 27));
+  let cfg;
+  try { cfg = loadPilotConfig(manifest); } catch (e) { throw e instanceof ConfigError ? new UsageError(e.message) : e; }
+  ARMS = cfg.arms; TASKS = cfg.tasks; CONTRASTS = cfg.contrasts; K = cfg.k ?? 3; PILOT = cfg.name; DECISION = cfg.decisionRule;
+  if (DECISION !== null && DECISION !== "pilot-02") throw new UsageError(`unknown DECISION_RULE ${DECISION} in ${cfg.path}`);
+  if (DECISION === "pilot-02") {
+    const readme = join(cfg.dir, "README.md");
+    if (!existsSync(readme) || !readFileSync(readme, "utf8").includes(DECISION_RULE_P02)) throw new UsageError(`${readme} does not contain the pre-registered decision rule verbatim; refusing to evaluate it`);
+  }
+  const expect = Number(flags.expect ?? (manifest.k && manifest.tasks && manifest.arms ? manifest.k * manifest.tasks.length * manifest.arms.length : K * TASKS.length * ARMS.length));
 
   const replaced = replacedIds(flags.key ?? (E ? join(E, "key", "key.csv") : ""));
   if (flags.freeze === "true") {

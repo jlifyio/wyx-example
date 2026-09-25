@@ -1,16 +1,18 @@
 #!/usr/bin/env bash
-# Launch one pilot-01 run: fresh BASE copy, P3 checks, arm setup, env -i claude launch (spec.arm_setup),
-# blinded scored copy and a logs/done.tsv line. DRY_RUN=1 prints the exact command instead of launching claude.
-# Usage: run-one.sh EVAL_ROOT ID TASK ARM [MODEL]   (TASK T1|T2|T3, or P2 for a harness probe)
+# Launch one pilot run (config from PILOT_CONFIG, default pilot-01): fresh BASE copy, P3 checks, arm setup, env -i
+# claude launch (spec.arm_setup), blinded scored copy and a logs/done.tsv line. DRY_RUN=1 prints the exact command instead of launching claude.
+# Usage: run-one.sh EVAL_ROOT ID TASK ARM [MODEL]   (TASK T1|T2|T3, or P2 for a harness probe; ARM from the config's ARMS)
 set -euo pipefail
 . "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
 [ $# -ge 4 ] && [ $# -le 5 ] || die "usage: run-one.sh EVAL_ROOT ID TASK ARM [MODEL]"
 load_config
 resolve_root "$1"
+check_manifest_config
 ID=$2 TASK=$3 ARM=$4 RUN_MODEL=${5:-$MODEL}
 [[ $ID =~ ^p?[0-9a-f]{6}$ ]] || die "id must be 6 hex digits, optionally prefixed with p: $ID"
-case $ARM in B | C | D) ;; *) die "arm must be B, C or D: $ARM" ;; esac
+case $ARM in B | C | D | E) ;; *) die "arm must be B, C, D or E: $ARM" ;; esac
+has_arm "$ARM" || die "arm $ARM is not in the config's ARMS ($ARMS)"
 [[ $RUN_MODEL =~ ^[A-Za-z0-9._-]+$ ]] || die "bad model name: $RUN_MODEL"
 
 # Frozen inputs must match what setup recorded.
@@ -48,6 +50,7 @@ want=$(mf .home.claude_md_sha256)
 got=$(home_sha "$HOME/.claude/settings.json")
 want=$(mf .home.settings_json_sha256)
 [ "$got" = "$want" ] || die "~/.claude/settings.json sha256 $got differs from setup's $want; the batch needs one user environment"
+user_rules_absent
 
 # P3: fresh copy, BASE tree, clean status, arm-specific .claude/, neutral path, absent projects slug.
 RUN_PARENT="$ROOT/runs/$ID"
@@ -70,27 +73,29 @@ tree=$(git -C "$RUN" rev-parse 'HEAD^{tree}')
 [ "$tree" = "$base_tree" ] || die "run HEAD^{tree} $tree differs from BASE tree $base_tree"
 st=$(git -C "$RUN" status --porcelain --ignored)
 [ -z "$st" ] || die "fresh copy is not clean:"$'\n'"$st"
-if [ "$ARM" = D ]; then
+if [ "$ARM" = D ] || [ "$ARM" = E ]; then
+  # D: path-scoped rules from rules/; E: the same bodies without frontmatter from rules-e/ (loaded at launch).
+  if [ "$ARM" = D ]; then rule_src="$ROOT/rules" rule_key=d_rules; else rule_src=$(mf .rules_e_dir) rule_key=e_rules; fi
   mkdir -p -- "$RUN/.claude/rules"
   for mod in $D_MODULES; do
-    cp -- "$ROOT/rules/$mod.md" "$RUN/.claude/rules/$mod.md"
+    cp -- "$rule_src/$mod.md" "$RUN/.claude/rules/$mod.md"
     chmod u+w -- "$RUN/.claude/rules/$mod.md"
   done
   listing=$(cd "$RUN/.claude" && find . -mindepth 1 -printf '%P\n' | LC_ALL=C sort)
   [ "$listing" = $'rules\nrules/inventory.md\nrules/orders.md\nrules/payments.md' ] \
-    || die "D .claude/ is not exactly the three rule files:"$'\n'"$listing"
+    || die "$ARM .claude/ is not exactly the three rule files:"$'\n'"$listing"
   for mod in $D_MODULES; do
     got=$(sha_file "$RUN/.claude/rules/$mod.md")
-    want=$(mf ".d_rules.$mod")
-    [ "$got" = "$want" ] || die "D rule $mod.md sha256 $got differs from manifest $want"
+    want=$(mf ".$rule_key.$mod")
+    [ "$got" = "$want" ] || die "$ARM rule $mod.md sha256 $got differs from manifest $want"
   done
   st=$(git -C "$RUN" status --porcelain)
-  [ -z "$st" ] || die "D rules show in git status (expected gitignored):"$'\n'"$st"
+  [ -z "$st" ] || die "$ARM rules show in git status (expected gitignored):"$'\n'"$st"
 else
   [ ! -e "$RUN/.claude" ] && [ ! -L "$RUN/.claude" ] || die "arm $ARM run has a .claude/"
 fi
 
-# Launch (spec.arm_setup.B; C adds --plugin-dir).
+# Launch (spec.arm_setup.B; C adds --plugin-dir; D and E differ only in .claude/rules).
 cmd=(env -i HOME="$HOME" USER="$USER" LANG="${LANG:-C.UTF-8}" TERM=dumb PATH="$PATH" EVAL_INSTR_LOG="$INSTR"
   ENABLE_CODE_SECURITY_REVIEW=0 ENABLE_STOP_REVIEW=0 ENABLE_COMMIT_REVIEW=0 DISABLE_AUTOUPDATER=1
   timeout 1200 "$CLAUDE_BIN" -p "$PROMPT" --model "$RUN_MODEL" --output-format stream-json --verbose --include-hook-events
@@ -115,7 +120,7 @@ ended=$(now_utc)
   printf '%s\t%s\t%s\t%s\n' "$ID" "$rc" "$started" "$ended" >&9
 } 9>>"$ROOT/logs/done.tsv"
 
-# Blinded scored copy (S0): drop .git/, .remember/ and exactly the three D rule paths; keep and list other .claude/ files.
+# Blinded scored copy (S0): drop .git/, .remember/ and exactly the three D/E rule paths; keep and list other .claude/ files.
 list="$ROOT/tmp/$ID.all"
 keep="$ROOT/tmp/$ID.keep"
 (cd "$RUN" && find . \( -path ./.git -o -path ./.remember \) -prune -o \( -type f -o -type l \) -print0) >"$list"

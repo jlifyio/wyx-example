@@ -156,8 +156,10 @@ bun score/analyze.ts --unblind --selftest "$st"            # joins key/key.csv, 
 
 All outputs stay under `$EVAL_ROOT` and never enter the repo.
 
+- `PILOT_CONFIG` selects another pilot's `config.env`, such as [pilot-02](../pilot-02/README.md) (arms B and E). When it is unset, every script uses this directory's `config.env` and behaves as described here. Setup records the config's path and sha256 in `manifest.json`, and later scripts refuse a different config.
+
 - `setup.sh` resolves `CLAUDE_BIN` (default: `claude` on `PATH`) to the real file, refuses unless its `--version` equals `CLAUDE_CODE_VERSION`, and records the path and sha256 in `manifest.json`. `run-one.sh` re-hashes that file and launches it directly, so a launcher that auto-updates mid-batch (the `~/.local/bin/claude` symlink moves to the new version) cannot change the version between runs.
-- `run-one.sh` also refuses to launch when `~/.claude/CLAUDE.md`, `~/.claude/settings.json` or the frozen wyx copy no longer match the hashes setup recorded, and it records their post-run hashes in `logs/<id>.copy.json` for `preflight.ts`.
+- `run-one.sh` also refuses to launch when `~/.claude/CLAUDE.md`, `~/.claude/settings.json` or the frozen wyx copy no longer match the hashes setup recorded, or when `~/.claude/rules/` holds any file (user-scope rules load in every arm; `preflight.ts` flags any load from there as `USER_RULES_LOADED`), and it records their post-run hashes in `logs/<id>.copy.json` for `preflight.ts`.
 - Setup leaves `base/shop`, `wyx-3ec85d5/` and `rules/` read-only. Run `chmod -R u+w "$EVAL_ROOT"` before deleting a root.
 - `run-batch.sh` refuses unless setup recorded `selftest=pass`, the latest probe round has a passing `preflight/p2-round<N>.json`, Stage-0 was accepted when required, and `git status --porcelain -- eval` is empty.
 - Within a wave, the launch order is `sha256("SEED:SALT:k:task:arm")`. `SALT` is 16 random bytes kept in `key/batch.json`, so the committed `SEED` alone cannot reproduce the order. The launch lists (`key/wave-<k>.args`) stay in `key/`, and the terminal summary is sorted by wave and id.

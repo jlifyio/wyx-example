@@ -12,6 +12,7 @@ if [ $# -gt 0 ] && [[ ! $1 =~ ^T[0-9]+$ ]]; then
   shift
 fi
 resolve_root "$root_arg"
+check_manifest_config
 export DRY_RUN=${DRY_RUN:-0}
 tasks=("$@")
 [ "${#tasks[@]}" -gt 0 ] || tasks=("${TASK_LIST[@]}")

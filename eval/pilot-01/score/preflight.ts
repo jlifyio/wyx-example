@@ -8,25 +8,32 @@ import {
   bashChangesCwd, bashWrites, hookResponses, inputPath, isoToEpoch, readJsonl, selectOne, succeeded, toolCalls, toRel, wordRel,
   type ToolCall,
 } from "./stream.ts";
+import { ConfigError, loadPilotConfig, type PilotConfig } from "./config.ts";
 
-type Arm = "B" | "C" | "D";
+type Arm = "B" | "C" | "D" | "E";
 interface Failure { code: string; detail: string; discards_batch: boolean; isolation: boolean }
 
 const USAGE = `usage:
-  bun score/preflight.ts p3    --run-path P --arm B|C|D (--eval-root E | --base DIR [--rules DIR]) [--id ID] [--out FILE]
-  bun score/preflight.ts run   --arm B|C|D --task T1|T2|T3 (--eval-root E --id ID | --stream F --instr F --run-path P --base DIR)
-                               [--rules DIR] [--wyx-path DIR] [--plugin-ref FILE] [--p3 FILE] [--out FILE]
+  bun score/preflight.ts p3    --run-path P --arm B|C|D|E (--eval-root E | --base DIR [--rules DIR]) [--id ID] [--out FILE]
+  bun score/preflight.ts run   --arm B|C|D|E --task T1|T2|T3 (--eval-root E --id ID | --stream F --instr F --run-path P --base DIR)
+                               [--rules DIR] [--rules-e DIR] [--wyx-path DIR] [--plugin-ref FILE] [--p3 FILE] [--out FILE]
   bun score/preflight.ts batch --eval-root E [--key FILE] [--plugin-ref FILE]      (default mode; only after analyze.ts --freeze)
   bun score/preflight.ts p2    --eval-root E [--round N]                          (probes in key/probes.csv)
 --eval-root defaults to $EVAL_ROOT.
-pins default to ../config.env, then to the pre-registered values; override with --model, --cc-version, --wyx-version.`;
+--rules DIR is the D (or, with --arm E in p3 mode, the E) rule source; --rules-e DIR is the E source in run mode.
+pins default to $PILOT_CONFIG (default ../config.env), then to the pre-registered values; override with --model, --cc-version, --wyx-version.`;
 
 const RULE_MODULES = ["orders", "inventory", "payments"] as const;
+// Arms whose run carries .claude/rules/{orders,inventory,payments}.md: D path-scoped, E without frontmatter (pilot-02).
+const RULE_ARMS = new Set<Arm>(["D", "E"]);
+// The InstructionsLoaded load_reason Claude Code 2.1.281 emits for instructions loaded at launch (pilot-01 logs: every
+// ~/.claude/CLAUDE.md entry, ts before the first assistant message); arm E's rules must load with it.
+export const LAUNCH_LOAD_REASON = "session_start";
 const CONSUMER: Record<string, string> = { T1: "payments", T2: "payments", T3: "orders", P2: "payments" };
 const PAYMENTS_DEPS_HEADER = "[src/payments/CONCEPT.md ## dependencies]";
 // run/lib.sh path_tokens_ok tokens (substrings anywhere, whole path components) plus "scratchpad".
 const PATH_SUBSTRINGS = ["t1", "t2", "t3", "wyx", "claude", "arm", "task", "treat", "control", "probe", "stage", "rule", "scratchpad"];
-const PATH_COMPONENTS = new Set(["b", "c", "d"]);
+const PATH_COMPONENTS = new Set(["b", "c", "d", "e"]);
 const SYSTEM_PREFIXES = ["/dev/", "/usr/", "/bin/", "/sbin/", "/lib/", "/lib64/", "/proc/", "/etc/", "/sys/"];
 
 class UsageError extends Error {}
@@ -44,15 +51,12 @@ function parseArgs(argv: string[]) {
   return { pos, flags };
 }
 
-function readConfig(): Record<string, string> {
-  const path = join(import.meta.dir, "..", "config.env");
-  const out: Record<string, string> = {};
-  if (!existsSync(path)) return out;
-  for (const line of readFileSync(path, "utf8").split("\n")) {
-    const m = line.match(/^\s*([A-Z_][A-Z0-9_]*)=(.*)$/);
-    if (m) out[m[1]] = m[2].trim().replace(/^["']|["']$/g, "");
+function readConfig(manifest: Record<string, any>): PilotConfig {
+  try {
+    return loadPilotConfig(manifest);
+  } catch (e) {
+    throw e instanceof ConfigError ? new UsageError(e.message) : e;
   }
-  return out;
 }
 
 function readManifest(E: string | undefined): Record<string, any> {
@@ -151,7 +155,7 @@ function ruleHashes(rulesDir: string): Record<string, string> | null {
   return out;
 }
 
-/** D: exactly the three rule files with the reference hashes; returns problems (empty when fine). */
+/** D and E: exactly the three rule files with the reference hashes; returns problems (empty when fine). */
 function checkRuleFiles(runPath: string, ref: Record<string, string>): string[] {
   const problems: string[] = [];
   const claude = join(runPath, ".claude");
@@ -208,20 +212,20 @@ export function p3Check(runPath: string, arm: Arm, base: string, rulesDir: strin
   const ruleRel = new Set(RULE_MODULES.map((m) => `.claude/rules/${m}.md`));
   const diffs: string[] = [];
   for (const [rel, h] of runM) {
-    if (arm === "D" && ruleRel.has(rel)) continue;
+    if (RULE_ARMS.has(arm) && ruleRel.has(rel)) continue;
     if (baseM.get(rel) !== h) diffs.push(baseM.has(rel) ? `changed ${rel}` : `extra ${rel}`);
   }
   for (const rel of baseM.keys()) if (!runM.has(rel)) diffs.push(`missing ${rel}`);
   checks.fresh_copy_diffs = diffs;
   if (diffs.length) failures.push(`not a fresh copy of BASE: ${diffs.slice(0, 5).join("; ")}`);
 
-  if (arm === "D") {
+  if (RULE_ARMS.has(arm)) {
     const ref = ruleRef ?? (rulesDir ? ruleHashes(rulesDir) : null);
     if (!ref) failures.push(`reference rules unreadable: ${rulesDir}`);
     else {
-      checks.d_rule_sha256 = ref;
+      checks[arm === "D" ? "d_rule_sha256" : "e_rule_sha256"] = ref;
       const problems = checkRuleFiles(runPath, ref);
-      if (problems.length) failures.push(`D rules: ${problems.join("; ")}`);
+      if (problems.length) failures.push(`${arm} rules: ${problems.join("; ")}`);
     }
   } else if (existsSync(join(runPath, ".claude"))) {
     failures.push(`${arm} run has .claude/`);
@@ -256,6 +260,8 @@ export interface RunOpts {
   base: string;
   rulesDir: string | null;
   ruleRef: Record<string, string> | null;
+  eRulesDir?: string | null;
+  eRuleRef?: Record<string, string> | null;
   wyxPath: string;
   wyxVersion: string;
   model: string;
@@ -439,7 +445,11 @@ export function checkRun(o: RunOpts) {
   // A rule loaded while the edit's own assistant message was being written (e.g. by a sibling Read) reached the model only
   // after that message, so delivery is judged against the start of the message that holds the first src edit.
   const firstSrcEditTs = firstSrcEdit ? isoToEpoch(firstSrcEdit.msgStartTs) : null;
-  rec.instr = { lines: 0, session_start: [], path_glob_match: [], other: [], first_src_edit: firstSrcEdit ? { tool_use_id: firstSrcEdit.id, ts: firstSrcEditTs, message_start_idx: firstSrcEdit.msgStartIdx, file: inputPath(firstSrcEdit.input) } : null, d_delivered: null, d_rule_not_loaded: [], d_rule_modified: null };
+  rec.instr = { lines: 0, session_start: [], path_glob_match: [], other: [], first_src_edit: firstSrcEdit ? { tool_use_id: firstSrcEdit.id, ts: firstSrcEditTs, message_start_idx: firstSrcEdit.msgStartIdx, file: inputPath(firstSrcEdit.input) } : null, d_delivered: null, d_rule_not_loaded: [], d_rule_modified: null, rule_loads: [] };
+  // E: the first main-thread assistant message; launch-loaded rules must precede it.
+  const firstMsg = events.find((e) => e.type === "assistant" && (e.parent_tool_use_id ?? null) === null) ?? null;
+  const firstMsgTs = firstMsg ? isoToEpoch(firstMsg.timestamp ?? null) : null;
+  if (o.arm === "E") Object.assign(rec.instr, { e_delivered: null, e_rule_not_loaded: [], e_rule_modified: null, first_assistant_message: firstMsg ? { idx: firstMsg.__idx ?? null, ts: firstMsgTs } : null });
   if (!existsSync(o.instr)) {
     fail("INSTR_LOG_MISSING", o.instr, { isolation: true });
   } else {
@@ -453,10 +463,15 @@ export function checkRun(o: RunOpts) {
       if (entry.load_reason === "path_glob_match") rec.instr.path_glob_match.push({ rule: entry.rel ?? fp, trigger_file_path: entry.trigger_file_path, agent_id: entry.agent_id, ts: entry.ts });
       else if (entry.load_reason !== "session_start") rec.instr.other.push(entry);
       const isRule = entry.rel !== null && /^\.claude\/rules\/[^/]+\.md$/.test(entry.rel);
+      if (isRule) rec.instr.rule_loads.push({ rule: entry.rel, load_reason: entry.load_reason, agent_id: entry.agent_id, ts: entry.ts });
       if (entry.rel !== null) {
-        if (isRule && o.arm !== "D") fail("RULES_IN_INSTR", `${o.arm} loaded ${entry.rel} (${entry.load_reason})`, { discards: true, isolation: true });
+        if (isRule && !RULE_ARMS.has(o.arm)) fail("RULES_IN_INSTR", `${o.arm} loaded ${entry.rel} (${entry.load_reason})`, { discards: true, isolation: true });
         else if (!isRule) fail("PROJECT_INSTRUCTIONS_LOADED", `${entry.rel} (${entry.load_reason})`, { discards: true, isolation: true });
-        else if (entry.load_reason === "session_start") fail("D_RULE_UNCONDITIONAL", `${entry.rel} loaded at session_start (frontmatter not applied)`);
+        else if (o.arm === "D" && entry.load_reason === "session_start") fail("D_RULE_UNCONDITIONAL", `${entry.rel} loaded at session_start (frontmatter not applied)`);
+        else if (o.arm === "E" && entry.load_reason === "path_glob_match") fail("E_RULE_PATH_SCOPED", `${entry.rel} loaded by path_glob_match (a paths frontmatter reached the file)`);
+      } else if (fp.startsWith(join(homedir(), ".claude", "rules") + "/")) {
+        // User-scope rules load in every arm and are not pinned by setup, so any load breaks the B/E contrast.
+        fail("USER_RULES_LOADED", `user-scope rule ${fp} (${entry.load_reason})`, { discards: true, isolation: true });
       } else if (fp.startsWith(join(homedir(), ".claude", "projects") + "/")) {
         fail("PROJECT_INSTRUCTIONS_LOADED", `auto memory ${fp} (${entry.load_reason})`, { discards: true, isolation: true });
       } else if (fp && !fp.startsWith(join(homedir(), ".claude") + "/") && `${resolve(o.runPath)}/`.startsWith(`${dirname(fp).replace(/\/\.claude(\/.*)?$/, "")}/`)) {
@@ -491,9 +506,36 @@ export function checkRun(o: RunOpts) {
         }
       }
     }
+    if (o.arm === "E") {
+      // Every E rule must load on the main thread with the launch load_reason before the first assistant message began.
+      const verdicts = RULE_MODULES.map((m) => {
+        const loads = rec.instr.rule_loads.filter((g: any) => g.rule === `.claude/rules/${m}.md` && g.load_reason === LAUNCH_LOAD_REASON && g.agent_id === null);
+        const timed = loads.filter((g: any) => g.ts !== null);
+        let ok: boolean | null;
+        if (firstMsg === null) ok = loads.length > 0;
+        else if (firstMsgTs === null) ok = loads.length ? null : false;
+        else {
+          ok = timed.some((g: any) => g.ts < firstMsgTs);
+          if (!ok && loads.length > timed.length) ok = null;
+        }
+        return { m, ok, loads: loads.length };
+      });
+      const notLoaded = verdicts.filter((v) => v.ok === false);
+      const unverifiable = verdicts.filter((v) => v.ok === null);
+      rec.instr.e_rule_not_loaded = notLoaded.map((v) => v.m);
+      if (notLoaded.length) {
+        rec.instr.e_delivered = false;
+        fail("E_RULE_NOT_LOADED", notLoaded.map((v) => `${v.m}: ${v.loads ? "loaded only after the first assistant message began" : `no main-thread ${LAUNCH_LOAD_REASON} entry`}`).join("; "));
+      } else if (unverifiable.length) {
+        rec.instr.e_delivered = null;
+        fail("E_DELIVERY_UNVERIFIABLE", `${unverifiable.map((v) => v.m).join(",")}: ${firstMsgTs === null ? "the first assistant message has no parseable timestamp" : `a ${LAUNCH_LOAD_REASON} entry has no ts`}`);
+      } else {
+        rec.instr.e_delivered = true;
+      }
+    }
   }
 
-  // D rule files unchanged at END; B/C have no rules directory
+  // D/E rule files unchanged at END; B/C have no rules directory
   if (o.arm === "D") {
     const ref = o.ruleRef ?? (o.rulesDir ? ruleHashes(o.rulesDir) : null);
     if (!ref) fail("D_RULE_REFERENCE_MISSING", `${o.rulesDir}`);
@@ -501,6 +543,14 @@ export function checkRun(o: RunOpts) {
       const problems = checkRuleFiles(o.runPath, ref);
       rec.instr.d_rule_modified = problems.length > 0;
       if (problems.length) fail("D_RULE_MODIFIED", problems.join("; "));
+    }
+  } else if (o.arm === "E") {
+    const ref = o.eRuleRef ?? (o.eRulesDir ? ruleHashes(o.eRulesDir) : null);
+    if (!ref) fail("E_RULE_REFERENCE_MISSING", `${o.eRulesDir ?? null}`);
+    else {
+      const problems = checkRuleFiles(o.runPath, ref);
+      rec.instr.e_rule_modified = problems.length > 0;
+      if (problems.length) fail("E_RULE_MODIFIED", problems.join("; "));
     }
   } else if (existsSync(join(o.runPath, ".claude", "rules"))) {
     fail("RULES_DIR_PRESENT", `${o.arm} run has .claude/rules at END`, { isolation: true });
@@ -585,7 +635,7 @@ export function checkRun(o: RunOpts) {
     p3.model_committed = headTree.ok && baseTree.ok ? headTree.out !== baseTree.out : null;
     if (!baseTree.ok || !rootTree?.ok) fail("P3_GIT_UNREADABLE", `${baseTree.err || roots.err || "multiple root commits"}`);
     else if (rootTree.out !== baseTree.out) fail("P3_BASE_MISMATCH", `run root commit tree ${rootTree.out} != BASE ${baseTree.out}`, { isolation: true });
-    if (existsSync(join(o.runPath, ".claude")) && o.arm !== "D") warnings.push(".claude/ present at END (scorer flags claude_dir_other_files)");
+    if (existsSync(join(o.runPath, ".claude")) && !RULE_ARMS.has(o.arm)) warnings.push(".claude/ present at END (scorer flags claude_dir_other_files)");
   }
   p3.project_slug_exists_after_run = existsSync(join(homedir(), ".claude", "projects", projectSlug(resolve(o.runPath))));
   if (o.p3File && existsSync(o.p3File)) {
@@ -689,7 +739,7 @@ function batchSummary(all: Record<string, any>[], explicitRef: string[] | null, 
 // ---------------------------------------------------------------- p2 (harness probes)
 
 /** P2 assertions on top of the per-run checks, for one probe round (one run per arm). */
-function p2Check(recs: Record<string, any>[], streams: Map<string, any[]>) {
+function p2Check(recs: Record<string, any>[], streams: Map<string, any[]>, arms: string[]) {
   const out: Record<string, string[]> = {};
   const userMemory = join(homedir(), ".claude", "CLAUDE.md");
   for (const r of recs) {
@@ -712,6 +762,11 @@ function p2Check(recs: Record<string, any>[], streams: Map<string, any[]>) {
       if (pgm.length) f.push("P2 C: path_glob_match present");
     } else if (r.arm === "B") {
       if (pgm.length) f.push("P2 B: path_glob_match present");
+    } else if (r.arm === "E") {
+      // The probe prompt asks for rule text loaded because of the file path, so a launch-loaded rule may rightly be
+      // answered NONE; the E verdict rests on the InstructionsLoaded log.
+      if (r.instr?.e_delivered !== true) f.push(`P2 E: the three rules were not all loaded with ${LAUNCH_LOAD_REASON} before the first assistant message (e_delivered ${r.instr?.e_delivered})`);
+      if (pgm.some((g) => /^\.claude\/rules\//.test(String(g.rule)))) f.push("P2 E: a rule loaded by path_glob_match");
     } else {
       const hit = pgm.some((g) => g.rule === ".claude/rules/payments.md" && String(g.trigger_file_path ?? "").endsWith("/src/payments/service.ts") && g.agent_id === null);
       if (!hit) f.push("P2 D: no main-thread path_glob_match of .claude/rules/payments.md triggered by src/payments/service.ts");
@@ -720,10 +775,11 @@ function p2Check(recs: Record<string, any>[], streams: Map<string, any[]>) {
     out[r.run_id] = f;
   }
   const sets = new Set(recs.map((r) => r.init?.plugin_set_sha256 ?? "no-init"));
-  const arms = recs.map((r) => r.arm).sort().join("");
+  const got = recs.map((r) => r.arm).sort().join("");
+  const want = [...arms].sort().join("");
   const batch: string[] = [];
   if (sets.size !== 1) batch.push(`plugin sets (minus wyx) differ across probes: ${[...sets].join(",")}`);
-  if (arms !== "BCD") batch.push(`probe round covers arms ${arms}, want BCD`);
+  if (got !== want) batch.push(`probe round covers arms ${got}, want ${want}`);
   return { pass: batch.length === 0 && Object.values(out).every((f) => f.length === 0), per_probe: out, round_failures: batch };
 }
 
@@ -735,14 +791,16 @@ function need(flags: Record<string, string>, k: string): string {
   return v;
 }
 
-function armOf(v: string): Arm {
-  if (v !== "B" && v !== "C" && v !== "D") throw new UsageError(`bad arm: ${v}`);
+function armOf(v: string, arms: string[] | null = null): Arm {
+  if (v !== "B" && v !== "C" && v !== "D" && v !== "E") throw new UsageError(`bad arm: ${v}`);
+  if (arms && !arms.includes(v)) throw new UsageError(`arm ${v} is not in the config's ARMS (${arms.join(" ")})`);
   return v;
 }
 
-function runOpts(flags: Record<string, string>, cfg: Record<string, string>, id: string, arm: Arm, task: string, runPathOverride?: string): RunOpts {
+function runOpts(flags: Record<string, string>, cfgAll: PilotConfig, id: string, arm: Arm, task: string, runPathOverride?: string): RunOpts {
   const E = flags["eval-root"];
   const mf = readManifest(E);
+  const cfg = cfgAll.values;
   const meta = E ? join(E, "scored", `${id}.meta.json`) : null;
   const recordedRun: string | undefined = meta && existsSync(meta) ? JSON.parse(readFileSync(meta, "utf8")).orig_root : undefined;
   const wyxSha = cfg.WYX_SHA ?? "3ec85d58e85d144d6f06bf4384d1b77d922d7f8d";
@@ -760,6 +818,8 @@ function runOpts(flags: Record<string, string>, cfg: Record<string, string>, id:
     base: pick("base", E ? mf.base_dir ?? join(E, "base", "shop") : null),
     rulesDir: flags.rules ?? (E ? mf.rules_dir ?? join(E, "rules") : null),
     ruleRef: flags.rules ? null : mf.d_rules ?? null,
+    eRulesDir: flags["rules-e"] ?? (E ? mf.rules_e_dir ?? join(E, "rules-e") : null),
+    eRuleRef: flags["rules-e"] ? null : mf.e_rules ?? null,
     wyxPath: pick("wyx-path", E ? mf.wyx_dir ?? join(E, `wyx-${wyxSha.slice(0, 7)}`) : null),
     wyxVersion: flags["wyx-version"] ?? mf.wyx_version ?? "0.27.0",
     model: flags.model ?? mf.model ?? cfg.MODEL ?? "claude-opus-5-5",
@@ -776,14 +836,17 @@ function runOpts(flags: Record<string, string>, cfg: Record<string, string>, id:
 function main(): number {
   const { pos, flags } = parseArgs(process.argv.slice(2));
   if (!flags["eval-root"] && process.env.EVAL_ROOT) flags["eval-root"] = process.env.EVAL_ROOT;
-  const cfg = readConfig();
+  const cfg = readConfig(readManifest(flags["eval-root"]));
   const mode = pos[0] ?? "batch";
   if (mode === "p3") {
     const E = flags["eval-root"];
     const mf = readManifest(E);
     const base = flags.base ?? (E ? mf.base_dir ?? join(E, "base", "shop") : null);
     if (!base) throw new UsageError("missing --base (or --eval-root)");
-    const r = p3Check(need(flags, "run-path"), armOf(need(flags, "arm")), base, flags.rules ?? (E ? mf.rules_dir ?? join(E, "rules") : null), flags.rules ? null : mf.d_rules ?? null);
+    const arm = armOf(need(flags, "arm"), cfg.arms);
+    const r = arm === "E"
+      ? p3Check(need(flags, "run-path"), arm, base, flags.rules ?? (E ? mf.rules_e_dir ?? join(E, "rules-e") : null), flags.rules ? null : mf.e_rules ?? null)
+      : p3Check(need(flags, "run-path"), arm, base, flags.rules ?? (E ? mf.rules_dir ?? join(E, "rules") : null), flags.rules ? null : mf.d_rules ?? null);
     const out = { run_id: flags.id ?? null, checked_at: new Date().toISOString(), ...r };
     const outPath = flags.out ?? (E && flags.id ? join(E, "preflight", `${flags.id}.p3.json`) : null);
     if (outPath) writeJson(outPath, out);
@@ -792,7 +855,7 @@ function main(): number {
   }
   if (mode === "run") {
     const id = flags.id ?? basename(need(flags, "stream")).replace(/\.jsonl$/, "");
-    const rec = checkRun(runOpts(flags, cfg, id, armOf(need(flags, "arm")), need(flags, "task")));
+    const rec = checkRun(runOpts(flags, cfg, id, armOf(need(flags, "arm"), cfg.arms), need(flags, "task")));
     const outPath = flags.out ?? (flags["eval-root"] ? join(flags["eval-root"], "preflight", `${id}.json`) : null);
     if (outPath) writeJson(outPath, rec);
     console.log(JSON.stringify(rec, null, 2));
@@ -802,7 +865,7 @@ function main(): number {
     const E = need(flags, "eval-root");
     requireFrozen(E);
     const rows = readKey(flags.key ?? join(E, "key", "key.csv"));
-    const recs = rows.map((r) => checkRun(runOpts(flags, cfg, r.id, armOf(r.arm), r.task, r.run_path || undefined)));
+    const recs = rows.map((r) => checkRun(runOpts(flags, cfg, r.id, armOf(r.arm, cfg.arms), r.task, r.run_path || undefined)));
     const mf = readManifest(E);
     const inputProblems: string[] = [];
     if (mf.wyx_dir && mf.wyx_tree_sha256) {
@@ -813,6 +876,13 @@ function main(): number {
     const now = ruleHashes(rulesDir);
     for (const m of RULE_MODULES) {
       if (!now || !mf.d_rules || now[m] !== mf.d_rules[m]) inputProblems.push(`RULES_COPY_MODIFIED: ${rulesDir}/${m}.md ${now?.[m] ?? "missing"} != manifest ${mf.d_rules?.[m] ?? "missing"}`);
+    }
+    if (cfg.arms.includes("E")) {
+      const eDir = mf.rules_e_dir ?? join(E, "rules-e");
+      const eNow = ruleHashes(eDir);
+      for (const m of RULE_MODULES) {
+        if (!eNow || !mf.e_rules || eNow[m] !== mf.e_rules[m]) inputProblems.push(`RULES_COPY_MODIFIED: ${eDir}/${m}.md ${eNow?.[m] ?? "missing"} != manifest ${mf.e_rules?.[m] ?? "missing"}`);
+      }
     }
     const summary = batchSummary(recs, readPluginRef(flags["plugin-ref"]), new Set(rows.map((r) => r.rerun_of).filter(Boolean)), inputProblems);
     for (const rec of recs) {
@@ -831,7 +901,7 @@ function main(): number {
     if (!existsSync(pkey)) throw new UsageError(`missing ${pkey}; run run/probe.sh first`);
     const lines = readFileSync(pkey, "utf8").split("\n").map((l) => l.trim()).filter(Boolean).slice(1).map((l) => l.split(","));
     const round = flags.round ?? String(Math.max(...lines.map((l) => Number(l[3]))));
-    const rows = lines.filter((l) => l[3] === round).map(([id, arm, model]) => ({ id, arm: armOf(arm), model }));
+    const rows = lines.filter((l) => l[3] === round).map(([id, arm, model]) => ({ id, arm: armOf(arm, cfg.arms), model }));
     if (!rows.length) throw new UsageError(`no probes for round ${round} in ${pkey}`);
     const streams = new Map<string, any[]>();
     const recs = rows.map((r) => {
@@ -842,7 +912,7 @@ function main(): number {
       writeJson(join(E, "preflight", `${r.id}.json`), rec);
       return rec;
     });
-    const verdict = { round, probes: rows, ...p2Check(recs, streams) };
+    const verdict = { round, probes: rows, ...p2Check(recs, streams, cfg.arms) };
     writeJson(join(E, "preflight", `p2-round${round}.json`), verdict);
     console.log(JSON.stringify(verdict, null, 2));
     return verdict.pass ? 0 : 1;

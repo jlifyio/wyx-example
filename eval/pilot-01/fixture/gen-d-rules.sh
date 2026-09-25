@@ -7,7 +7,7 @@ set -euo pipefail
 
 HERE=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 PILOT=$(dirname "$HERE")
-source "$PILOT/config.env"
+source "${PILOT_CONFIG:-$PILOT/config.env}"   # PILOT_CONFIG selects another pilot's pins (run/lib.sh exports it)
 EXPECTED="$HERE/expected.sha256"
 
 unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE GIT_OBJECT_DIRECTORY GIT_ALTERNATE_OBJECT_DIRECTORIES
