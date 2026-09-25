@@ -1,0 +1,264 @@
+{
+  "run_id": "93125f",
+  "arm": "D",
+  "task": "T1",
+  "run_path": "/tmp/shop-eval-8CoCii/runs/93125f/shop",
+  "stream": "/tmp/shop-eval-8CoCii/logs/93125f.jsonl",
+  "instr_log": "/tmp/shop-eval-8CoCii/logs/93125f.instr.jsonl",
+  "pins": {
+    "model": "claude-opus-5-5",
+    "claude_code_version": "2.1.281",
+    "wyx_path": "/tmp/shop-eval-8CoCii/wyx-3ec85d5",
+    "wyx_version": "0.27.0"
+  },
+  "telemetry": {
+    "stream_events": 241,
+    "parse_errors": [],
+    "rate_limit_events": 3,
+    "rate_limit_statuses": [
+      "allowed"
+    ]
+  },
+  "init": {
+    "model": "claude-opus-5-5",
+    "claude_code_version": "2.1.281",
+    "permissionMode": "acceptEdits",
+    "cwd": "/tmp/shop-eval-8CoCii/runs/93125f/shop",
+    "per_turn_effort_active": true,
+    "output_style": "default",
+    "plugin_set_sorted": [
+      "agents-md@unversioned",
+      "chrome-devtools-mcp@1.9.0",
+      "clangd-lsp@1.0.0",
+      "claude-hygiene@0.5.5",
+      "cloudflare@1.0.0",
+      "code-review@unversioned",
+      "commit-commands@unversioned",
+      "context7@unversioned",
+      "cowork-plugin-management@0.2.2",
+      "data@1.1.0",
+      "deploy-kit@0.6.0",
+      "design@1.2.0",
+      "docflow@0.14.4",
+      "duckdb-skills@0.2.4",
+      "engineering@1.2.0",
+      "explanatory-output-style@1.0.0",
+      "feature-dev@unversioned",
+      "frontend-design@unversioned",
+      "frontend-toolkit@0.8.4",
+      "marketing@1.2.0",
+      "ntfy-kit@0.3.16",
+      "pdf-viewer@0.2.0",
+      "playwright@unversioned",
+      "plugin-dev@unversioned",
+      "pr-review-toolkit@unversioned",
+      "product-management@1.2.0",
+      "productivity@1.3.1",
+      "pyright-lsp@1.0.0",
+      "release-kit@0.9.2",
+      "remember@0.33.0",
+      "rust-analyzer-lsp@1.0.0",
+      "security-guidance@2.0.8",
+      "stripe@0.10.3",
+      "superpowers@6.4.1",
+      "telemetry@unversioned",
+      "typescript-lsp@1.0.0",
+      "workflow-kit@0.19.2"
+    ],
+    "plugin_set_sha256": "0778aed78f9d6651973d764841d31a4d088e2dc92fe538d9c6fa7a69ba1a68fe",
+    "wyx": null,
+    "skills_wyx_n": 0,
+    "mcp_servers": {
+      "plugin:chrome-devtools-mcp:chrome-devtools": "connected",
+      "plugin:context7:context7": "connected",
+      "plugin:playwright:playwright": "connected",
+      "plugin:cloudflare:cloudflare-api": "needs-auth",
+      "plugin:cloudflare:cloudflare-docs": "connected",
+      "plugin:cloudflare:cloudflare-bindings": "needs-auth",
+      "plugin:cloudflare:cloudflare-builds": "needs-auth",
+      "plugin:cloudflare:cloudflare-observability": "needs-auth",
+      "plugin:stripe:stripe": "needs-auth",
+      "plugin:productivity:slack": "needs-auth",
+      "plugin:productivity:notion": "needs-auth",
+      "plugin:productivity:asana": "needs-auth",
+      "plugin:productivity:linear": "needs-auth",
+      "plugin:productivity:atlassian": "needs-auth",
+      "plugin:productivity:monday": "needs-auth",
+      "plugin:productivity:clickup": "needs-auth",
+      "plugin:productivity:google calendar": "failed",
+      "plugin:productivity:gmail": "failed",
+      "plugin:design:figma": "needs-auth",
+      "plugin:design:intercom": "needs-auth",
+      "plugin:design:google calendar": "failed",
+      "plugin:design:gmail": "failed",
+      "plugin:engineering:github": "needs-auth",
+      "plugin:engineering:pagerduty": "needs-auth",
+      "plugin:engineering:datadog": "needs-auth",
+      "plugin:engineering:google calendar": "failed",
+      "plugin:engineering:gmail": "failed",
+      "plugin:marketing:canva": "needs-auth",
+      "plugin:marketing:hubspot": "needs-auth",
+      "plugin:marketing:amplitude": "needs-auth",
+      "plugin:marketing:amplitude-eu": "needs-auth",
+      "plugin:marketing:ahrefs": "needs-auth",
+      "plugin:marketing:similarweb": "needs-auth",
+      "plugin:marketing:klaviyo": "needs-auth",
+      "plugin:marketing:supermetrics": "needs-auth",
+      "plugin:marketing:google calendar": "failed",
+      "plugin:marketing:gmail": "failed",
+      "plugin:pdf-viewer:pdf": "pending",
+      "plugin:product-management:pendo": "needs-auth",
+      "plugin:product-management:fireflies": "needs-auth",
+      "plugin:product-management:google calendar": "failed",
+      "plugin:product-management:gmail": "failed",
+      "plugin:product-management:similarweb": "needs-auth",
+      "plugin:data:snowflake": "failed",
+      "plugin:data:databricks": "failed",
+      "plugin:data:bigquery": "needs-auth",
+      "plugin:data:hex": "needs-auth",
+      "plugin:data:definite": "failed",
+      "claude.ai Claude Docs": "connected",
+      "claude.ai Google Calendar": "needs-auth",
+      "claude.ai Google Drive": "needs-auth",
+      "claude.ai Gmail": "needs-auth"
+    }
+  },
+  "hooks": {
+    "wyx_session_n": 0,
+    "wyx_pre_n": 0,
+    "wyx_post_n": 0,
+    "wyx_any_token_n": 0,
+    "successful_edits_near_spec_n": 4,
+    "denied_edits_near_spec_n": 0,
+    "subagent_edits_near_spec_n": 0,
+    "wyx_hook_miss": null,
+    "first_wyx_pre_idx": null,
+    "stop_rounds": 1
+  },
+  "treatment_delivered": null,
+  "instr": {
+    "lines": 1,
+    "session_start": [
+      "$HOME/.claude/CLAUDE.md"
+    ],
+    "path_glob_match": [],
+    "other": [],
+    "first_src_edit": {
+      "tool_use_id": "toolu_01ELmLAjtd1hkAwAEXFAVLih",
+      "ts": 1790304186.654,
+      "message_start_idx": 79,
+      "file": "/tmp/shop-eval-8CoCii/runs/93125f/shop/src/payments/service.ts"
+    },
+    "d_delivered": false,
+    "d_rule_not_loaded": [
+      "payments"
+    ],
+    "d_rule_modified": false,
+    "d_consumer_rule": "payments.md"
+  },
+  "tools": {
+    "read_paths": [],
+    "edited_by_tools": {
+      "main": [
+        "src/payments/service.ts",
+        "src/payments/CONCEPT.md",
+        "scratch-paycheck.ts"
+      ],
+      "subagent": []
+    },
+    "bash_write_cmds": [],
+    "bash_write_unresolved": [],
+    "files_written_then_deleted": [
+      "scratch-paycheck.ts"
+    ],
+    "subagent_used": false,
+    "subagent_tool_uses": [],
+    "skills_invoked": [],
+    "outside_cwd_attempts": [
+      {
+        "tool": "Bash",
+        "ref": "/tmp/paycheck-93125f",
+        "denied": true,
+        "ok": false
+      },
+      {
+        "tool": "Bash",
+        "ref": "/tmp/paycheck-93125f/check.ts",
+        "denied": true,
+        "ok": false
+      },
+      {
+        "tool": "Write",
+        "ref": "/tmp/paycheck-93125f/check.ts",
+        "denied": true,
+        "ok": false
+      }
+    ],
+    "spec_created_mid_run": [],
+    "tool_use_counts": {
+      "Bash": 7,
+      "Edit": 4,
+      "Write": 3
+    }
+  },
+  "result": {
+    "subtype": "success",
+    "is_error": false,
+    "num_turns": 15,
+    "total_cost_usd": 0.5894026,
+    "duration_ms": 90889,
+    "stop_reason": "end_turn",
+    "terminal_reason": "completed",
+    "permission_denials": [
+      {
+        "tool": "Bash",
+        "path_or_command": "mkdir -p /tmp/paycheck-93125f && cat > /tmp/paycheck-93125f/check.ts <<'EOF'\nimport { insertOrder, findOrder } from \"/tmp/shop-eval-8CoCii/runs/93125f/shop/src/orders/repository\";\nimport { processPayment, getPaymentStatus } from \"/tmp/shop-eval-8CoCii/runs/93125f/shop/src/payments/service\";\nconst mk"
+      },
+      {
+        "tool": "Write",
+        "path_or_command": "/tmp/paycheck-93125f/check.ts"
+      },
+      {
+        "tool": "Write",
+        "path_or_command": "/tmp/shop-eval-8CoCii/runs/93125f/shop/.claude/scratch-paycheck.ts"
+      },
+      {
+        "tool": "Bash",
+        "path_or_command": "bun run scratch-paycheck.ts; rm scratch-paycheck.ts; bunx -p typescript tsc --noEmit --strict --target es2022 --module esnext --moduleResolution bundler --lib es2022,dom src/payments/service.ts && echo TSC_OK; git status --short"
+      }
+    ],
+    "modelUsage_keys": [
+      "claude-opus-5-5"
+    ]
+  },
+  "p3_recheck": {
+    "path_token_hits": [],
+    "base_tree": "6c64b564efe4aba7bfd306998060744f4919b347",
+    "run_root_commit_tree": "6c64b564efe4aba7bfd306998060744f4919b347",
+    "run_head_tree": "6c64b564efe4aba7bfd306998060744f4919b347",
+    "model_committed": false,
+    "project_slug_exists_after_run": true,
+    "prelaunch": "run-one.sh wrote /tmp/shop-eval-8CoCii/logs/93125f.cmd after its P3 gate"
+  },
+  "post_run": {
+    "home": {
+      "claude_md_sha256": "157c93e539e31ff40bbdd3e6e04459ccdb8280233dfa1e74bd035944c305e8e1",
+      "settings_json_sha256": "6908de169899d676ac97b4387d3f92b45cf2d7a141d376f3ced69cc001d862b7"
+    },
+    "wyx_tree_sha256": "6ffe178a8ee1628e74a97c4605838ce04791e651d689098cdef211eb11ef9b7f"
+  },
+  "pass": false,
+  "discards_batch": false,
+  "isolation_ok": true,
+  "failures": [
+    {
+      "code": "D_RULE_NOT_LOADED",
+      "detail": "payments: no main-thread path_glob_match",
+      "discards_batch": false,
+      "isolation": false
+    }
+  ],
+  "warnings": [],
+  "manual_review_required": false,
+  "manual_review_reasons": []
+}

@@ -1,0 +1,100 @@
+{
+  "created_at": "2026-09-25T02:37:30.780Z",
+  "eval_root": "/tmp/shop-eval-8CoCii",
+  "harness": {
+    "dir": "<workspace>/wyx-example/eval/pilot-01",
+    "repo": "<workspace>/wyx-example",
+    "sha": "2909c2a76db77b8faa1b5f7ff811db6e74cc2a37",
+    "clean": true
+  },
+  "fixture_sha": "e070afbe7c3ce4bb1eece18b5cd2b15bc32fe8c1",
+  "expected_sha256_file": "4f0fcc9b2fccee616f7a80f204d1ddfd9e0cb321ba06b726e75655fec0c4a4a7",
+  "overlay_sha256": {
+    "fixture/overlay/README.md": "78a21b629211757f3cf1220dfd266eee0ef05813c07a4fff7abe735378bbf3b1",
+    "fixture/overlay/src/orders/repository.ts": "63a863a3591bd3621d960878e1e8d91a9238bb5e44e19c0ca6226824058f0b17",
+    "fixture/overlay/src/orders/service.ts": "050bc0b9973b00251c03bc53a7525c68ad9c3894c219c7276b43158b02e08d32",
+    "fixture/overlay/src/inventory/repository.ts": "4cb455422be4daea32cd8aee3be5a2e7b7e80b304b366209e6d31e16bb63ca43",
+    "fixture/overlay/src/payments/repository.ts": "7e64651af0a2fd3c2a544a6b597233e4ab0f20d13923f78b8e13f189eda876c4",
+    "fixture/overlay/src/payments/service.ts": "3f9295349a3eb00e512f8dca4cff76cf6aa1efa743db7b4b0a85c31ce8e35172"
+  },
+  "base_dir": "/tmp/shop-eval-8CoCii/base/shop",
+  "base_tree": "6c64b564efe4aba7bfd306998060744f4919b347",
+  "base_commit": "464d4eebe3cf9ed6107ddea021b8fa009d71ec88",
+  "base_tree_expected": "6c64b564efe4aba7bfd306998060744f4919b347",
+  "stage0_required": false,
+  "concept_sha256": {
+    "orders": "6080f3fa9a822e1d8768a5ab51ba533e5d06a41d6421ecbbec8e0288ca4abf0a",
+    "inventory": "d42df90bc8d27fc9858a52cc5d83de50857d0a3a0b271d185ecd6a5824b8ec7b",
+    "payments": "60ccd8b3b39646ccfa1338086f203a8a3e83dffd3b0a817890753d29ccbec9b5"
+  },
+  "d_rules": {
+    "orders": "ff3729e3cb043c0860038d2e1e423fb69ad1d1cc1e6e01dd94c732963564fec8",
+    "inventory": "2e0992f8d3479d2420b6c3da8f34e3798c2ebb92088b200e2444296211e833ae",
+    "payments": "0dcb6a12558db05543a993544a275a6fc479d8fc2a4541bb176fb2f3df18eb33"
+  },
+  "rules_dir": "/tmp/shop-eval-8CoCii/rules",
+  "wyx_sha": "3ec85d58e85d144d6f06bf4384d1b77d922d7f8d",
+  "wyx_repo": "<workspace>/wyx",
+  "wyx_dir": "/tmp/shop-eval-8CoCii/wyx-3ec85d5",
+  "wyx_version": "0.27.0",
+  "wyx_tree_sha256": "6ffe178a8ee1628e74a97c4605838ce04791e651d689098cdef211eb11ef9b7f",
+  "wyx_git_trees": {
+    ".claude-plugin": "7486080272ae85c59bc48b85b93bb30ffaed1a99",
+    "hooks": "678f11dc1bbdc9af7a4d61eb06026ec2189a5088",
+    "scripts": "0222dc051b16798e7e3ef5fb40a3d97a9cf280cf",
+    "skills": "66e58dfac1db2854850a8381c967205ea0a24d55"
+  },
+  "prompts": {
+    "T1": "ed110d0d82b6b30fc12f7643094ef5b273da2135a8a9cc310007b9e3329e7595",
+    "T2": "8c45a7d120eb91e1a1dc977ea86e4534813056102548c5b0c186c0564e06eea4",
+    "T3": "4a16a0450655a6022e28b21e47d9b44e79c6ec7247beeb3903ccc003674c7bdd"
+  },
+  "probe_prompt_sha256": "3a1257e09126c8edc53213bd47cfecfce8f95f5f293d736ed9a25796e47cb2e3",
+  "settings_path": "<workspace>/wyx-example/eval/pilot-01/run/settings.json",
+  "settings_sha256": "3024df0f0f9523cfd39134abfc5c33c65ee901911b0c6c590e2ea3d03a085509",
+  "env_whitelist": [
+    "HOME",
+    "USER",
+    "LANG",
+    "TERM",
+    "PATH",
+    "EVAL_INSTR_LOG",
+    "ENABLE_CODE_SECURITY_REVIEW",
+    "ENABLE_STOP_REVIEW",
+    "ENABLE_COMMIT_REVIEW",
+    "DISABLE_AUTOUPDATER"
+  ],
+  "model": "claude-opus-5-5",
+  "probe_model": "claude-haiku-4-5",
+  "claude_code_version": "2.1.281",
+  "tools": {
+    "claude_path": "$HOME/.local/share/claude/versions/2.1.281",
+    "claude_bin": "$HOME/.local/share/claude/versions/2.1.281",
+    "claude_bin_sha256": "56fe3da88458465fb27d7e9299dddb3fead55750fb9c2de795f233b5eea6dce1",
+    "claude_version_output": "2.1.281 (Claude Code)",
+    "claude_version": "2.1.281",
+    "bun": "1.3.14",
+    "jq": "jq-1.8.2",
+    "git": "git version 2.55.0",
+    "tar": "tar (GNU tar) 1.35",
+    "bash": "5.3.15(1)-release",
+    "typescript": "6.0.3"
+  },
+  "selftest": "pass",
+  "home": {
+    "claude_md_sha256": "157c93e539e31ff40bbdd3e6e04459ccdb8280233dfa1e74bd035944c305e8e1",
+    "settings_json_sha256": "6908de169899d676ac97b4387d3f92b45cf2d7a141d376f3ced69cc001d862b7"
+  },
+  "seed": "20260925",
+  "k": 3,
+  "tasks": [
+    "T1",
+    "T2",
+    "T3"
+  ],
+  "arms": [
+    "B",
+    "C",
+    "D"
+  ]
+}

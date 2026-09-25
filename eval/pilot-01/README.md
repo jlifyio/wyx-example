@@ -172,6 +172,14 @@ A batch is discarded, not patched, if:
 - the model, version, permission mode or plugin set differs across runs;
 - any wyx output appears in B or D.
 
+## Results (2026-09-25)
+
+Violations B 6/9, C 5/9, D 4/9 — no detectable difference (only about 55 pp differences are visible at this size).
+In all 9 C runs Claude wrote its whole code change in one response, before any wyx context arrived, and no C run
+changed its code afterwards; D's path-scoped rules loaded before the first edit in 2/9 runs because most runs read
+files with `cat`. Snapshot, redactions and post-run analysis fixes: [results/2026-09-25](results/2026-09-25/README.md).
+Decision: wyx DEC-025.
+
 ## Measured cost and time
 
 In the screen, an Opus run cost about **$0.64** and took about **88 s** of `duration_ms`: 18 runs, $11.56 in total, range $0.51–0.77 and 61–108 s, 21.7 turns on average. See [`calibration/`](calibration/). At that rate, 27 scored runs are about $17, and each wave of 9 concurrent runs takes about 2 minutes, so three waves take about 6 minutes of model time.

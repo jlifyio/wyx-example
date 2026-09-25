@@ -1,0 +1,27 @@
+{
+  "round": "1",
+  "probes": [
+    {
+      "id": "p9bf915",
+      "arm": "B",
+      "model": "claude-haiku-4-5"
+    },
+    {
+      "id": "p419d37",
+      "arm": "C",
+      "model": "claude-haiku-4-5"
+    },
+    {
+      "id": "p42d2e5",
+      "arm": "D",
+      "model": "claude-haiku-4-5"
+    }
+  ],
+  "pass": true,
+  "per_probe": {
+    "p9bf915": [],
+    "p419d37": [],
+    "p42d2e5": []
+  },
+  "round_failures": []
+}
