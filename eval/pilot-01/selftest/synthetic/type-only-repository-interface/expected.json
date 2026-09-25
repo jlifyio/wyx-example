@@ -1,0 +1,52 @@
+{
+  "case": "type-only-repository-interface",
+  "task": "T3",
+  "orig_root": null,
+  "rules": [
+    "S2b",
+    "S6",
+    "S9",
+    "S13"
+  ],
+  "assert": {
+    "violation": false,
+    "violation_S1": true,
+    "critical_runtime_n": 0,
+    "critical_type_n": 1,
+    "critical_direct": {
+      "len": 1,
+      "contains": {
+        "file": "src/orders/service.ts",
+        "line": 5,
+        "symbol": "PaymentRecord"
+      }
+    },
+    "critical_laundered": [],
+    "service_passthrough": [],
+    "test_reach_in": [],
+    "outside_reach_in": [],
+    "non_service_target": [],
+    "store_export": [],
+    "undeclared_concept": [],
+    "undeclared_symbol": [],
+    "declared_by_run": [],
+    "spec_weakened": [],
+    "repair_swap": [],
+    "repaired_preexisting": [],
+    "unspecced_consumer": [],
+    "spec_deleted": [],
+    "flags.repo_clone": [],
+    "flags.table_sql": [],
+    "flags.alias_config_touched": [],
+    "flags.symlink": [],
+    "flags.nonliteral_import": [],
+    "flags.unresolved": [],
+    "flags.ns_unresolved": [],
+    "transpile_ok": true,
+    "tsc_ok": true
+  },
+  "unasserted": {
+    "violation_S2": "S13 does not say whether the sensitivity analyses are cumulative (S2 includes S1) or separate.",
+    "violation_S3": "Same reason as violation_S2."
+  }
+}

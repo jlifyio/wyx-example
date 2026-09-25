@@ -1,0 +1,43 @@
+diff --git a/src/payments/CONCEPT.md b/src/payments/CONCEPT.md
+index 9d4d191..3163233 100644
+--- a/src/payments/CONCEPT.md
++++ b/src/payments/CONCEPT.md
+@@ -24,3 +24,12 @@ after processPayment(orderId, amount)
+ 
+ ## dependencies
+ - Orders: read-only via getOrderTotal()
++  - getOrder() to check the order before confirming
++- Orders: read-only via getOrderTotal()
++- Stock levels (Inventory): checkStock()
++
++## notes
++Payments keeps no copy of order or stock data.
++
++## dependencies
++Notifications: notifyPaymentReceived() after a successful charge
+diff --git a/src/payments/service.ts b/src/payments/service.ts
+index 4860672..2dace35 100644
+--- a/src/payments/service.ts
++++ b/src/payments/service.ts
+@@ -1,6 +1,9 @@
+ // Payments service
+ import { findOrder } from "../orders/repository";
+ import { insertPayment, findPayment, updatePaymentStatus } from "./repository";
++import { getOrder } from "../orders/service";
++import { checkStock } from "../inventory/service";
++import { notifyPaymentReceived } from "../notifications/service";
+ 
+ export async function processPayment(orderId: string, amount: number) {
+   const order = await findOrder(orderId);
+@@ -34,3 +37,11 @@ export async function refund(paymentId: string) {
+   if (payment.status !== "completed") throw new Error("Can only refund completed payments");
+   await updatePaymentStatus(paymentId, "refunded");
+ }
++
++export async function confirmPayment(paymentId: string, email: string) {
++  const payment = await findPayment(paymentId);
++  if (!payment) throw new Error(`Payment not found: ${paymentId}`);
++  const order = await getOrder(payment.orderId);
++  for (const item of order.items) await checkStock(item.productId);
++  await notifyPaymentReceived(paymentId, email);
++}

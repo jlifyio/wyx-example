@@ -1,0 +1,15 @@
+Synthetic scorer self-test case: require-cache
+
+Task: T1 (score.ts --task T1)
+Rules: S2, S13
+
+Scenario
+src/payments/service.ts looks the orders repository up in `require.cache` and calls its updateOrderStatus export.
+
+Expected
+`require.cache` is a loader reference that is not a direct call: NONLITERAL_IMPORT and manual review (review finding 1).
+
+Asserted fields are in expected.json; the matcher contract is in ../README.md.
+
+Deliberately not asserted
+- tsc_ok: Needs ambient Node/Bun type declarations for require/createRequire/node:module, which the scorer's tsc run does not load.

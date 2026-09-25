@@ -1,0 +1,15 @@
+Synthetic scorer self-test case: import-equals-require
+
+Task: T1 (score.ts --task T1)
+Rules: S2, S6
+
+Scenario
+src/payments/service.ts adds `import orderRepo = require("../orders/repository")` and calls orderRepo.updateOrderStatus().
+
+Expected
+One CRITICAL_DIRECT runtime finding. S2 covers ImportEqualsDeclaration with require and takes the symbol from the member access. tsc_ok is false: with --module esnext, tsc rejects an import assignment (TS1202), whatever type packages are installed.
+
+Asserted fields are in expected.json; the matcher contract is in ../README.md.
+
+Deliberately not asserted
+- critical_direct[].line: The finding could carry either the import line or the member-access line.

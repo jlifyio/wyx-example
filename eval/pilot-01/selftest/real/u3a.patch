@@ -1,0 +1,92 @@
+diff --git a/src/orders/CONCEPT.md b/src/orders/CONCEPT.md
+index 29fe1c2..ab4f767 100644
+--- a/src/orders/CONCEPT.md
++++ b/src/orders/CONCEPT.md
+@@ -17,6 +17,9 @@ Returns order details. Fails if order not found.
+ ### getOrderTotal [orderId: OrderId] => number | error: String
+ Returns the total amount for an order. This is the public API for other modules to read order totals.
+ 
++### getOrderReceipt [orderId: OrderId, paymentId: PaymentId] => Receipt | error: String
++Returns { orderId, customerId, items, total, amountPaid, paymentStatus, paidAt }, combining the order with its payment's amount, status and processedAt. Fails if the order or payment is not found, or if the payment belongs to a different order.
++
+ ### cancelOrder [orderId: OrderId] => void | error: String
+ Cancels an order and releases reserved inventory. Fails if order already shipped.
+ 
+@@ -29,7 +32,9 @@ then cancelOrder(orderId)
+ ## interactions
+ - Reads stock levels through `Inventory.checkStock()`
+ - Reserves and releases stock through `Inventory.reserveStock()` and `Inventory.releaseStock()`
++- Reads payment details through `Payments.getPayment()`
+ - The Inventory repository and Payments internals are private to those concepts, so Orders does not import them
+ 
+ ## dependencies
+ - Inventory: read + reserve via checkStock(), reserveStock(), releaseStock()
++- Payments: read-only via getPayment()
+diff --git a/src/orders/service.ts b/src/orders/service.ts
+index 0beb062..aa816e4 100644
+--- a/src/orders/service.ts
++++ b/src/orders/service.ts
+@@ -2,6 +2,7 @@
+ import { insertOrder, findOrder, updateOrderStatus } from "./repository";
+ import { reserveStock, releaseStock } from "../inventory/service";
+ import { findStock } from "../inventory/repository";
++import { getPayment } from "../payments/service";
+ 
+ export async function createOrder(
+   customerId: string,
+@@ -47,6 +48,24 @@ export async function getOrderTotal(orderId: string): Promise<number> {
+   return order.total;
+ }
+ 
++export async function getOrderReceipt(orderId: string, paymentId: string) {
++  const order = await getOrder(orderId);
++  const payment = await getPayment(paymentId);
++  if (payment.orderId !== orderId) {
++    throw new Error(`Payment ${paymentId} does not belong to order ${orderId}`);
++  }
++
++  return {
++    orderId: order.id,
++    customerId: order.customerId,
++    items: order.items,
++    total: order.total,
++    amountPaid: payment.amount,
++    paymentStatus: payment.status,
++    paidAt: payment.processedAt,
++  };
++}
++
+ export async function cancelOrder(orderId: string) {
+   const order = await getOrder(orderId);
+   if (order.status === "shipped") throw new Error("Cannot cancel shipped order");
+diff --git a/src/payments/CONCEPT.md b/src/payments/CONCEPT.md
+index 9d4d191..9669955 100644
+--- a/src/payments/CONCEPT.md
++++ b/src/payments/CONCEPT.md
+@@ -11,6 +11,9 @@ Process payments for customer orders
+ ### processPayment [orderId: string, amount: number] => PaymentId | error: String
+ Charges the customer for an order. Reads order total from Orders to verify amount matches. Fails if amount mismatch or payment gateway error.
+ 
++### getPayment [paymentId: PaymentId] => Payment | error: String
++Returns payment details (orderId, amount, status, processedAt). Fails if payment not found. This is the public API for other modules to read payments.
++
+ ### getPaymentStatus [paymentId: PaymentId] => PaymentStatus
+ Returns current payment status (pending, completed, failed).
+ 
+diff --git a/src/payments/service.ts b/src/payments/service.ts
+index 4860672..59f2d98 100644
+--- a/src/payments/service.ts
++++ b/src/payments/service.ts
+@@ -22,6 +22,12 @@ export async function processPayment(orderId: string, amount: number) {
+   return paymentId;
+ }
+ 
++export async function getPayment(paymentId: string) {
++  const payment = await findPayment(paymentId);
++  if (!payment) throw new Error(`Payment not found: ${paymentId}`);
++  return payment;
++}
++
+ export async function getPaymentStatus(paymentId: string) {
+   const payment = await findPayment(paymentId);
+   if (!payment) throw new Error(`Payment not found: ${paymentId}`);

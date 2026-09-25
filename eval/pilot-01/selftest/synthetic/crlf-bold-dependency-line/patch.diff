@@ -1,0 +1,76 @@
+diff --git a/src/payments/CONCEPT.md b/src/payments/CONCEPT.md
+index 9d4d191..86c6726 100644
+--- a/src/payments/CONCEPT.md
++++ b/src/payments/CONCEPT.md
+@@ -1,26 +1,26 @@
+-# concept: Payments [PaymentId]
+-
+-## purpose
+-Process payments for customer orders
+-
+-## state
+-- payments: PaymentId -> { orderId: string, amount: number, status: PaymentStatus, processedAt: Date }
+-
+-## actions
+-
+-### processPayment [orderId: string, amount: number] => PaymentId | error: String
+-Charges the customer for an order. Reads order total from Orders to verify amount matches. Fails if amount mismatch or payment gateway error.
+-
+-### getPaymentStatus [paymentId: PaymentId] => PaymentStatus
+-Returns current payment status (pending, completed, failed).
+-
+-## operational principle
+-after processPayment(orderId, amount)
+-  => getPaymentStatus(paymentId) == "completed"
+-
+-## interactions
+-- Reads the order total through `Orders.getOrderTotal()`
+-- The Orders repository and Inventory internals are private to those concepts, so Payments does not import them
+-
+-## dependencies
+-- Orders: read-only via getOrderTotal()
++# concept: Payments [PaymentId]
++
++## purpose
++Process payments for customer orders
++
++## state
++- payments: PaymentId -> { orderId: string, amount: number, status: PaymentStatus, processedAt: Date }
++
++## actions
++
++### processPayment [orderId: string, amount: number] => PaymentId | error: String
++Charges the customer for an order. Reads order total from Orders to verify amount matches. Fails if amount mismatch or payment gateway error.
++
++### getPaymentStatus [paymentId: PaymentId] => PaymentStatus
++Returns current payment status (pending, completed, failed).
++
++## operational principle
++after processPayment(orderId, amount)
++  => getPaymentStatus(paymentId) == "completed"
++
++## interactions
++- Reads the order total through `Orders.getOrderTotal()`
++- The Orders repository and Inventory internals are private to those concepts, so Payments does not import them
++
++## Dependencies
++- **Orders**: read-only via `getOrderTotal()` and `getOrder()`
+diff --git a/src/payments/service.ts b/src/payments/service.ts
+index 4860672..7be8178 100644
+--- a/src/payments/service.ts
++++ b/src/payments/service.ts
+@@ -1,6 +1,7 @@
+ // Payments service
+ import { findOrder } from "../orders/repository";
+ import { insertPayment, findPayment, updatePaymentStatus } from "./repository";
++import { getOrder } from "../orders/service";
+ 
+ export async function processPayment(orderId: string, amount: number) {
+   const order = await findOrder(orderId);
+@@ -32,5 +33,6 @@ export async function refund(paymentId: string) {
+   const payment = await findPayment(paymentId);
+   if (!payment) throw new Error(`Payment not found: ${paymentId}`);
+   if (payment.status !== "completed") throw new Error("Can only refund completed payments");
++  await getOrder(payment.orderId);
+   await updatePaymentStatus(paymentId, "refunded");
+ }

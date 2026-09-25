@@ -1,0 +1,59 @@
+diff --git a/src/payments/CONCEPT.md b/src/payments/CONCEPT.md
+index 9d4d191..c70d170 100644
+--- a/src/payments/CONCEPT.md
++++ b/src/payments/CONCEPT.md
+@@ -14,13 +14,19 @@ Charges the customer for an order. Reads order total from Orders to verify amoun
+ ### getPaymentStatus [paymentId: PaymentId] => PaymentStatus
+ Returns current payment status (pending, completed, failed).
+ 
++### refund [paymentId: PaymentId] => void | error: String
++Refunds a completed payment for a returned order. Marks the payment refunded and adds each order item's quantity back to that product's available stock (reserved unchanged). Fails if the payment is not completed, or the order or any product is not found.
++
+ ## operational principle
+ after processPayment(orderId, amount)
+   => getPaymentStatus(paymentId) == "completed"
+ 
+ ## interactions
+ - Reads the order total through `Orders.getOrderTotal()`
++- Reads order items for refunds through `Orders.getOrder()`
+ - The Orders repository and Inventory internals are private to those concepts, so Payments does not import them
++- Known exception (hotfix): `refund` restocks via the Inventory repository (`findStock`/`updateStock`) because Inventory has no public restock action; switch to one once Inventory provides it
+ 
+ ## dependencies
+-- Orders: read-only via getOrderTotal()
++- Orders: read-only via getOrderTotal(), getOrder()
++- Inventory: restock on refund (currently via repository, see exception above)
+diff --git a/src/payments/service.ts b/src/payments/service.ts
+index 4860672..0049bae 100644
+--- a/src/payments/service.ts
++++ b/src/payments/service.ts
+@@ -1,5 +1,10 @@
+ // Payments service
+ import { findOrder } from "../orders/repository";
++import { getOrder } from "../orders/service";
++// Hotfix: Inventory's public API has no restock action (reserve/release keep
++// available + reserved constant), so refund writes through the repository.
++// Replace with an Inventory restock action once the Inventory team adds one.
++import { findStock, updateStock } from "../inventory/repository";
+ import { insertPayment, findPayment, updatePaymentStatus } from "./repository";
+ 
+ export async function processPayment(orderId: string, amount: number) {
+@@ -32,5 +37,18 @@ export async function refund(paymentId: string) {
+   const payment = await findPayment(paymentId);
+   if (!payment) throw new Error(`Payment not found: ${paymentId}`);
+   if (payment.status !== "completed") throw new Error("Can only refund completed payments");
++
++  // Validate every product before mutating, so a missing product leaves no partial restock
++  const order = await getOrder(payment.orderId);
++  for (const item of order.items) {
++    if (!(await findStock(item.productId))) throw new Error(`Product not found: ${item.productId}`);
++  }
++
+   await updatePaymentStatus(paymentId, "refunded");
++
++  // Returned items go back to available stock; reserved is untouched
++  for (const item of order.items) {
++    const stock = (await findStock(item.productId))!;
++    await updateStock(item.productId, stock.available + item.quantity, stock.reserved);
++  }
+ }

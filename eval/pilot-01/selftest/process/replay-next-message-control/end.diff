@@ -1,0 +1,12 @@
+diff --git a/src/payments/service.ts b/src/payments/service.ts
+index 4860672..3036663 100644
+--- a/src/payments/service.ts
++++ b/src/payments/service.ts
+@@ -1,5 +1,5 @@
+-// Payments service
+-import { findOrder } from "../orders/repository";
++// Payments service (hotfix)
++import { findOrder, updateOrderStatus } from "../orders/repository";
+ import { insertPayment, findPayment, updatePaymentStatus } from "./repository";
+ 
+ export async function processPayment(orderId: string, amount: number) {

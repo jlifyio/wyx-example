@@ -1,0 +1,12 @@
+Synthetic scorer self-test case: undeclared-concept-inventory
+
+Task: T2 (score.ts --task T2)
+Rules: S9
+
+Scenario
+src/payments/service.ts imports { checkStock } from "../inventory/service", and refund() checks every item of the order. The spec is unchanged.
+
+Expected
+UNDECLARED_CONCEPT (Y inventory) and UNDECLARED_SYMBOL checkStock. Payments ## dependencies lists only Orders. Inventory appears only in ## interactions, which S9 does not read.
+
+Asserted fields are in expected.json; the matcher contract is in ../README.md.

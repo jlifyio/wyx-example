@@ -1,0 +1,13 @@
+// Ambient declaration of bun:test for the secondary tsc check (S12); the harness has no @types packages.
+declare module "bun:test" {
+  export const test: any;
+  export const it: any;
+  export const describe: any;
+  export const expect: any;
+  export const beforeAll: any;
+  export const beforeEach: any;
+  export const afterAll: any;
+  export const afterEach: any;
+  export const mock: any;
+  export const spyOn: any;
+}

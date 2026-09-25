@@ -1,0 +1,36 @@
+diff --git a/src/payments/service.ts b/src/payments/service.ts
+index 4860672..83349a5 100644
+--- a/src/payments/service.ts
++++ b/src/payments/service.ts
+@@ -2,6 +2,21 @@
+ import { findOrder } from "../orders/repository";
+ import { insertPayment, findPayment, updatePaymentStatus } from "./repository";
+ 
++interface LocalStock {
++  available: number;
++  reserved: number;
++}
++
++const restockLedger = new Map<string, LocalStock>();
++
++async function findStock(productId: string): Promise<LocalStock | null> {
++  return restockLedger.get(productId) ?? null;
++}
++
++async function updateStock(productId: string, available: number, reserved: number): Promise<void> {
++  restockLedger.set(productId, { available, reserved });
++}
++
+ export async function processPayment(orderId: string, amount: number) {
+   const order = await findOrder(orderId);
+   if (!order) throw new Error(`Order not found: ${orderId}`);
+@@ -33,4 +48,9 @@ export async function refund(paymentId: string) {
+   if (!payment) throw new Error(`Payment not found: ${paymentId}`);
+   if (payment.status !== "completed") throw new Error("Can only refund completed payments");
+   await updatePaymentStatus(paymentId, "refunded");
++  const order = await findOrder(payment.orderId);
++  for (const item of order?.items ?? []) {
++    const current = await findStock(item.productId);
++    await updateStock(item.productId, (current?.available ?? 0) + item.quantity, current?.reserved ?? 0);
++  }
+ }

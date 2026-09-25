@@ -1,0 +1,13 @@
+diff --git a/src/payments/service.ts b/src/payments/service.ts
+index 4860672..1af9020 100644
+--- a/src/payments/service.ts
++++ b/src/payments/service.ts
+@@ -3,6 +3,8 @@ import { findOrder } from "../orders/repository";
+ import { insertPayment, findPayment, updatePaymentStatus } from "./repository";
+ 
+ export async function processPayment(orderId: string, amount: number) {
++  // we never UPDATE orders here: order status belongs to the Orders module
++  // payments only reads the orders table through findOrder
+   const order = await findOrder(orderId);
+   if (!order) throw new Error(`Order not found: ${orderId}`);
+   if (order.total !== amount) {

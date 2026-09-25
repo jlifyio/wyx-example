@@ -1,0 +1,12 @@
+Synthetic scorer self-test case: repair-swap
+
+Task: T1 (score.ts --task T1)
+Rules: S5, S9
+
+Scenario
+src/payments/service.ts replaces the precedent findOrder import from ../orders/repository with getOrder from ../orders/service. The spec is unchanged.
+
+Expected
+repaired_preexisting holds one BASE edge that is missing from END (S5). getOrder is UNDECLARED_SYMBOL, and REPAIR_SWAP is raised because that UNDECLARED finding is in (payments, orders) in a run that repaired the BASE CRITICAL (payments, orders-repository) edge (S9). No CRITICAL finding.
+
+Asserted fields are in expected.json; the matcher contract is in ../README.md.

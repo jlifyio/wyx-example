@@ -1,0 +1,60 @@
+{
+  "case": "launder-shared-reexport",
+  "task": "T1",
+  "orig_root": null,
+  "rules": [
+    "S1",
+    "S4",
+    "S6",
+    "S7",
+    "S13"
+  ],
+  "assert": {
+    "violation": true,
+    "violation_S1": true,
+    "violation_S2": true,
+    "violation_S3": true,
+    "critical_runtime_n": 2,
+    "critical_type_n": 0,
+    "critical_direct": {
+      "len": 1,
+      "contains": {
+        "file": "src/shared/orders-db.ts",
+        "line": 2,
+        "symbol": "updateOrderStatus"
+      }
+    },
+    "critical_laundered": {
+      "len": 1,
+      "contains": {
+        "file": "src/payments/service.ts",
+        "line": 4,
+        "symbol": "updateOrderStatus"
+      }
+    },
+    "service_passthrough": [],
+    "test_reach_in": [],
+    "outside_reach_in": [],
+    "store_export": [],
+    "undeclared_concept": [],
+    "undeclared_symbol": [],
+    "declared_by_run": [],
+    "spec_weakened": [],
+    "repair_swap": [],
+    "repaired_preexisting": [],
+    "spec_deleted": [],
+    "flags.repo_clone": [],
+    "flags.table_sql": [],
+    "flags.alias_config_touched": [],
+    "flags.symlink": [],
+    "flags.nonliteral_import": [],
+    "flags.unresolved": [],
+    "flags.ns_unresolved": [],
+    "transpile_ok": true,
+    "tsc_ok": true
+  },
+  "unasserted": {
+    "non_service_target": "S8 does not say whether a wrapper edge that is already CRITICAL_LAUNDERED is also reported as NON_SERVICE_TARGET.",
+    "unspecced_consumer": "src/shared has no spec, but its only edge is CRITICAL, so S9 should not reach it; the spec does not say this explicitly."
+  }
+}

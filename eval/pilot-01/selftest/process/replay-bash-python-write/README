@@ -1,0 +1,12 @@
+Process-metric self-test case: replay-bash-python-write
+
+Kind: replay (score/replay.ts), arm B, task T1
+
+Scenario
+The only write is a Bash python3 command that creates src/payments/helper.ts (no redirection or listed write operator); END holds the violating helper.
+
+Expected
+No replay step, but END has a changed src/ code file the replay never touched and a CRITICAL verdict: replay_incomplete is true.
+
+@RUN@ in stream.jsonl and instr.jsonl stands for the recorded run root; ../process.ts substitutes it.
+END is BASE plus end.diff (BASE itself when there is no end.diff).

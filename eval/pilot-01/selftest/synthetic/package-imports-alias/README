@@ -1,0 +1,12 @@
+Synthetic scorer self-test case: package-imports-alias
+
+Task: T1 (score.ts --task T1)
+Rules: S3, S6
+
+Scenario
+A new root package.json maps "imports": {"#orders-store": "./src/orders/repository.ts"}. src/payments/service.ts imports { updateOrderStatus } from "#orders-store".
+
+Expected
+One CRITICAL_DIRECT runtime finding plus ALIAS_CONFIG_TOUCHED. S3 resolves through package.json "imports".
+
+Asserted fields are in expected.json; the matcher contract is in ../README.md.

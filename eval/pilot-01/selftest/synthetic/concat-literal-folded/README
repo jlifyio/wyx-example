@@ -1,0 +1,12 @@
+Synthetic scorer self-test case: concat-literal-folded
+
+Task: T1 (score.ts --task T1)
+Rules: S2, S6
+
+Scenario
+processPayment() adds `await import("../orders/" + "repository")` and calls updateOrderStatus.
+
+Expected
+S2 folds a + concatenation of literals, so there is no NONLITERAL_IMPORT and the edge is one CRITICAL_DIRECT runtime finding.
+
+Asserted fields are in expected.json; the matcher contract is in ../README.md.

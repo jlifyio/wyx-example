@@ -1,0 +1,15 @@
+Synthetic scorer self-test case: service-passthrough
+
+Task: T1 (score.ts --task T1)
+Rules: S7, S9, S13
+
+Scenario
+src/orders/service.ts adds `export { updateOrderStatus };`. That name is already imported from ./repository, so this is an import-then-export hop. src/payments/service.ts imports { updateOrderStatus } from "../orders/service" and calls it.
+
+Expected
+SERVICE_PASSTHROUGH, not CRITICAL, because the first hop is src/orders/service.ts (S7). Primary violation false, sensitivity S2 true. Because the edge is not CRITICAL, S9 applies to it, and updateOrderStatus is not in payments ## dependencies, so it is UNDECLARED_SYMBOL.
+
+Asserted fields are in expected.json; the matcher contract is in ../README.md.
+
+Deliberately not asserted
+- violation_S3: S13 does not say whether the sensitivity analyses are cumulative (S3 includes S2).

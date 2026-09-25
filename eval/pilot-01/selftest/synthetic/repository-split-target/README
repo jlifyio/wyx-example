@@ -1,0 +1,12 @@
+Synthetic scorer self-test case: repository-split-target
+
+Task: T1 (score.ts --task T1)
+Rules: S4, S9, S13
+
+Scenario
+The orders repository body moves to src/orders/store.ts, src/orders/repository.ts becomes `export * from "./store"`, and the payments service imports updateOrderStatus from "../orders/store".
+
+Expected
+S4 defines the provider repository by path, so the edge is not CRITICAL; the target is a file the orders repository re-exports from, so REPOSITORY_SPLIT_TARGET sends the run to manual review (review finding 5). S8/S9 apply as for any wrapper: NON_SERVICE_TARGET and UNDECLARED_SYMBOL (payments' ## dependencies names only getOrderTotal).
+
+Asserted fields are in expected.json; the matcher contract is in ../README.md.

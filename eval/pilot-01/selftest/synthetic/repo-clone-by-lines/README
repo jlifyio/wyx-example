@@ -1,0 +1,12 @@
+Synthetic scorer self-test case: repo-clone-by-lines
+
+Task: T3 (score.ts --task T3)
+Rules: S10
+
+Scenario
+src/orders/service.ts declares interface PaymentView. Its three field lines (id, orderId, amount) are identical to three consecutive lines of src/payments/repository.ts. No declaration reuses a repository export name.
+
+Expected
+REPO_CLONE through the rule of at least 3 consecutive whitespace-normalized non-blank lines (S10), and nothing else.
+
+Asserted fields are in expected.json; the matcher contract is in ../README.md.

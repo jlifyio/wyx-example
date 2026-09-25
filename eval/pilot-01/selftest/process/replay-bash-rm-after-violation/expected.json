@@ -1,0 +1,19 @@
+{
+  "case": "replay-bash-rm-after-violation",
+  "kind": "replay",
+  "arm": "B",
+  "task": "T1",
+  "assert": {
+    "attempted_violation": true,
+    "final_violation_replay": true,
+    "replay_incomplete": true,
+    "replay_incomplete_reasons": [
+      "end_src_divergence",
+      "end_verdict_differs"
+    ],
+    "end_check.deleted_at_end": [
+      "src/payments/helper.ts"
+    ],
+    "end_check.end_verdict_differs": true
+  }
+}

@@ -1,0 +1,17 @@
+diff --git a/src/notifications/service.ts b/src/notifications/service.ts
+index 1812310..09f0b48 100644
+--- a/src/notifications/service.ts
++++ b/src/notifications/service.ts
+@@ -2,9 +2,11 @@
+ import { sendEmail } from "./email";
+ import { sendSms } from "./sms";
+ import { renderTemplate } from "./templates";
++import { getOrder } from "../orders/service";
+ 
+ export async function notifyOrderConfirmed(orderId: string, email: string) {
+-  const html = renderTemplate("order-confirmed", { orderId });
++  const order = await getOrder(orderId);
++  const html = renderTemplate("order-confirmed", { orderId, total: String(order.total) });
+   await sendEmail(email, "Order Confirmed", html);
+ }
+ 

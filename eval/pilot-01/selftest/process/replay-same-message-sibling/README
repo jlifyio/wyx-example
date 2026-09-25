@@ -1,0 +1,12 @@
+Process-metric self-test case: replay-same-message-sibling
+
+Kind: replay (score/replay.ts), arm C, task T1
+
+Scenario
+One assistant message holds two Edits of src/payments/service.ts: a benign one, then the one that adds updateOrderStatus from the orders repository. Claude Code runs the first Edit (and its wyx PreToolUse hook) while the second is still being streamed, so the first hook response precedes the violating tool_use in the stream.
+
+Expected
+The violating edit is step 2 and the model wrote it before any injected context reached it: wyx_before_first_violation is false (review: stats-preflight finding 1).
+
+@RUN@ in stream.jsonl and instr.jsonl stands for the recorded run root; ../process.ts substitutes it.
+END is BASE plus end.diff (BASE itself when there is no end.diff).

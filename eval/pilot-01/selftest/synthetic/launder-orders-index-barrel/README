@@ -1,0 +1,15 @@
+Synthetic scorer self-test case: launder-orders-index-barrel
+
+Task: T1 (score.ts --task T1)
+Rules: S3, S4, S7
+
+Scenario
+A new src/orders/index.ts contains `export * from "./service"` and `export { updateOrderStatus } from "./repository"`. src/payments/service.ts imports { updateOrderStatus } from "../orders" (a directory import) and calls it.
+
+Expected
+One CRITICAL_LAUNDERED finding and no CRITICAL_DIRECT finding. S3 resolves "../orders" to src/orders/index.ts before ownership is assigned (the index/barrel fix). index.ts is owned by orders (S4), so its own re-export edge is not cross-module. S7 names this case: a new src/Y/index.ts barrel counts as CRITICAL_LAUNDERED.
+
+Asserted fields are in expected.json; the matcher contract is in ../README.md.
+
+Deliberately not asserted
+- non_service_target: S8 does not say whether a wrapper edge that is already CRITICAL_LAUNDERED is also reported as NON_SERVICE_TARGET.

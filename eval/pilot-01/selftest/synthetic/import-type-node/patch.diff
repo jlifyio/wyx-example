@@ -1,0 +1,12 @@
+diff --git a/src/orders/service.ts b/src/orders/service.ts
+index 0beb062..9efc477 100644
+--- a/src/orders/service.ts
++++ b/src/orders/service.ts
+@@ -57,3 +57,7 @@ export async function cancelOrder(orderId: string) {
+ 
+   await updateOrderStatus(orderId, "cancelled");
+ }
++
++export function paymentOrderId(payment: import("../payments/repository").PaymentRecord): string {
++  return payment.orderId;
++}

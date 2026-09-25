@@ -1,0 +1,17 @@
+{
+  "case": "preflight-d-sibling-read",
+  "kind": "preflight",
+  "arm": "D",
+  "task": "T1",
+  "assert": {
+    "instr.d_delivered": false,
+    "failures": {
+      "contains": {
+        "code": "D_RULE_NOT_LOADED"
+      },
+      "not_contains": {
+        "code": "D_DELIVERY_UNVERIFIABLE"
+      }
+    }
+  }
+}

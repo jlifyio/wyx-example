@@ -1,0 +1,12 @@
+Synthetic scorer self-test case: repo-clone-by-name
+
+Task: T2 (score.ts --task T2)
+Rules: S10, S11
+
+Scenario
+src/payments/service.ts declares its own findStock() and updateStock() over a private Map, and refund() restocks the order's items into it. Nothing is imported from inventory.
+
+Expected
+REPO_CLONE, because new declarations are named after inventory repository exports (S10). There is no SQL-shaped text, so no TABLE_SQL. No CRITICAL finding. T2 c1 fails because the real inventory stock is untouched, since a clone cannot share the module-private Map, so complete is false (checked against the prototype syn.SI71/checks/T2R.test.ts).
+
+Asserted fields are in expected.json; the matcher contract is in ../README.md.

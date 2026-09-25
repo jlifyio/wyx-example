@@ -1,0 +1,47 @@
+diff --git a/src/orders/CONCEPT.md b/src/orders/CONCEPT.md
+index 29fe1c2..1499ea9 100644
+--- a/src/orders/CONCEPT.md
++++ b/src/orders/CONCEPT.md
+@@ -33,3 +33,4 @@ then cancelOrder(orderId)
+ 
+ ## dependencies
+ - Inventory: read + reserve via checkStock(), reserveStock(), releaseStock()
++- Payments: reads a payment via getPayment()
+diff --git a/src/orders/service.ts b/src/orders/service.ts
+index 0beb062..7feb7ad 100644
+--- a/src/orders/service.ts
++++ b/src/orders/service.ts
+@@ -2,6 +2,7 @@
+ import { insertOrder, findOrder, updateOrderStatus } from "./repository";
+ import { reserveStock, releaseStock } from "../inventory/service";
+ import { findStock } from "../inventory/repository";
++import { getPayment, type PaymentDetails } from "../payments/service";
+ 
+ export async function createOrder(
+   customerId: string,
+@@ -57,3 +58,9 @@ export async function cancelOrder(orderId: string) {
+ 
+   await updateOrderStatus(orderId, "cancelled");
+ }
++
++export async function getPaymentForOrder(orderId: string, paymentId: string): Promise<PaymentDetails> {
++  const payment = await getPayment(paymentId);
++  if (payment.orderId !== orderId) throw new Error("Payment belongs to a different order");
++  return payment;
++}
+diff --git a/src/payments/service.ts b/src/payments/service.ts
+index 4860672..4838cb6 100644
+--- a/src/payments/service.ts
++++ b/src/payments/service.ts
+@@ -34,3 +34,11 @@ export async function refund(paymentId: string) {
+   if (payment.status !== "completed") throw new Error("Can only refund completed payments");
+   await updatePaymentStatus(paymentId, "refunded");
+ }
++
++export type PaymentDetails = { amount: number; status: string; processedAt: Date };
++
++export async function getPayment(paymentId: string): Promise<PaymentDetails & { orderId: string }> {
++  const payment = await findPayment(paymentId);
++  if (!payment) throw new Error(`Payment not found: ${paymentId}`);
++  return { orderId: payment.orderId, amount: payment.amount, status: payment.status, processedAt: payment.processedAt };
++}

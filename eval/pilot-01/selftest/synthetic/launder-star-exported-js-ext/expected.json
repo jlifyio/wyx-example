@@ -1,0 +1,50 @@
+{
+  "case": "launder-star-exported-js-ext",
+  "task": "T1",
+  "orig_root": null,
+  "rules": [
+    "S3",
+    "S7"
+  ],
+  "assert": {
+    "violation": true,
+    "violation_S1": true,
+    "violation_S2": true,
+    "violation_S3": true,
+    "critical_runtime_n": 1,
+    "critical_type_n": 0,
+    "critical_direct": [],
+    "critical_laundered": {
+      "len": 1,
+      "contains": {
+        "file": "src/payments/service.ts",
+        "line": 4,
+        "symbol": "updateOrderStatus"
+      }
+    },
+    "service_passthrough": [],
+    "test_reach_in": [],
+    "outside_reach_in": [],
+    "store_export": [],
+    "undeclared_concept": [],
+    "undeclared_symbol": [],
+    "declared_by_run": [],
+    "spec_weakened": [],
+    "repair_swap": [],
+    "repaired_preexisting": [],
+    "unspecced_consumer": [],
+    "spec_deleted": [],
+    "flags.repo_clone": [],
+    "flags.table_sql": [],
+    "flags.alias_config_touched": [],
+    "flags.symlink": [],
+    "flags.nonliteral_import": [],
+    "flags.unresolved": [],
+    "flags.ns_unresolved": [],
+    "transpile_ok": true,
+    "tsc_ok": true
+  },
+  "unasserted": {
+    "non_service_target": "S8 does not say whether a wrapper edge that is already CRITICAL_LAUNDERED is also reported as NON_SERVICE_TARGET."
+  }
+}

@@ -1,0 +1,29 @@
+diff --git a/src/payments/service.ts b/src/payments/service.ts
+index 4860672..c229f72 100644
+--- a/src/payments/service.ts
++++ b/src/payments/service.ts
+@@ -1,6 +1,7 @@
+ // Payments service
+ import { findOrder } from "../orders/repository";
+ import { insertPayment, findPayment, updatePaymentStatus } from "./repository";
++import { markPaid } from "./test/order-status";
+ 
+ export async function processPayment(orderId: string, amount: number) {
+   const order = await findOrder(orderId);
+@@ -19,6 +20,8 @@ export async function processPayment(orderId: string, amount: number) {
+     updatedAt: new Date(),
+   });
+ 
++  await markPaid(orderId);
++
+   return paymentId;
+ }
+ 
+diff --git a/src/payments/test/order-status.ts b/src/payments/test/order-status.ts
+new file mode 100644
+index 0000000..ca22edf
+--- /dev/null
++++ b/src/payments/test/order-status.ts
+@@ -0,0 +1,2 @@
++import { updateOrderStatus } from "../../orders/repository";
++export async function markPaid(id: string) { await updateOrderStatus(id, "paid"); }

@@ -1,0 +1,10 @@
+diff --git a/src/orders/CONCEPT.md b/src/orders/CONCEPT.md
+index 29fe1c2..99fb0a7 100644
+--- a/src/orders/CONCEPT.md
++++ b/src/orders/CONCEPT.md
+@@ -32,4 +32,4 @@ then cancelOrder(orderId)
+ - The Inventory repository and Payments internals are private to those concepts, so Orders does not import them
+ 
+ ## dependencies
+-- Inventory: read + reserve via checkStock(), reserveStock(), releaseStock()
++- Inventory: read + reserve via checkStock(), reserveStock()

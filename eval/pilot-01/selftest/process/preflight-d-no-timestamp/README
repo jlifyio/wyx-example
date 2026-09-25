@@ -1,0 +1,11 @@
+Process-metric self-test case: preflight-d-no-timestamp
+
+Kind: preflight (score/preflight.ts), arm D, task T1
+
+Scenario
+D run whose assistant events carry no timestamp; the payments rule was loaded by a Read before the first src edit.
+
+Expected
+The first src edit has no parseable time, so ordering cannot be checked: d_delivered is null with D_DELIVERY_UNVERIFIABLE, never a vacuous pass (review: stats-preflight finding 2).
+
+@RUN@ in stream.jsonl and instr.jsonl stands for the recorded run root; ../process.ts substitutes it.

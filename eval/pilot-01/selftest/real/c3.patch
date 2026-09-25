@@ -1,0 +1,62 @@
+diff --git a/src/orders/CONCEPT.md b/src/orders/CONCEPT.md
+index 29fe1c2..345db74 100644
+--- a/src/orders/CONCEPT.md
++++ b/src/orders/CONCEPT.md
+@@ -17,6 +17,9 @@ Returns order details. Fails if order not found.
+ ### getOrderTotal [orderId: OrderId] => number | error: String
+ Returns the total amount for an order. This is the public API for other modules to read order totals.
+ 
++### getOrderReceipt [orderId: OrderId, paymentId: PaymentId] => Receipt | error: String
++Returns order details combined with the payment's amount, status and processedAt. Fails if the order or payment is not found, or if the payment belongs to a different order.
++
+ ### cancelOrder [orderId: OrderId] => void | error: String
+ Cancels an order and releases reserved inventory. Fails if order already shipped.
+ 
+@@ -30,6 +33,8 @@ then cancelOrder(orderId)
+ - Reads stock levels through `Inventory.checkStock()`
+ - Reserves and releases stock through `Inventory.reserveStock()` and `Inventory.releaseStock()`
+ - The Inventory repository and Payments internals are private to those concepts, so Orders does not import them
++- Exception: `getOrderReceipt` reads payment records via `Payments.repository.findPayment()` because Payments has no public accessor for amount/processedAt. Replace with a Payments service accessor once one exists.
+ 
+ ## dependencies
+ - Inventory: read + reserve via checkStock(), reserveStock(), releaseStock()
++- Payments: read-only via findPayment() (temporary, see interactions)
+diff --git a/src/orders/service.ts b/src/orders/service.ts
+index 0beb062..18da449 100644
+--- a/src/orders/service.ts
++++ b/src/orders/service.ts
+@@ -2,6 +2,8 @@
+ import { insertOrder, findOrder, updateOrderStatus } from "./repository";
+ import { reserveStock, releaseStock } from "../inventory/service";
+ import { findStock } from "../inventory/repository";
++// Payments exposes no public accessor for amount/processedAt yet; read-only use of its repository.
++import { findPayment } from "../payments/repository";
+ 
+ export async function createOrder(
+   customerId: string,
+@@ -47,6 +49,25 @@ export async function getOrderTotal(orderId: string): Promise<number> {
+   return order.total;
+ }
+ 
++export async function getOrderReceipt(orderId: string, paymentId: string) {
++  const order = await getOrder(orderId);
++  const payment = await findPayment(paymentId);
++  if (!payment) throw new Error(`Payment not found: ${paymentId}`);
++  if (payment.orderId !== orderId) {
++    throw new Error(`Payment ${paymentId} does not belong to order ${orderId}`);
++  }
++
++  return {
++    orderId: order.id,
++    customerId: order.customerId,
++    items: order.items,
++    total: order.total,
++    amountPaid: payment.amount,
++    paymentStatus: payment.status,
++    paidAt: payment.processedAt,
++  };
++}
++
+ export async function cancelOrder(orderId: string) {
+   const order = await getOrder(orderId);
+   if (order.status === "shipped") throw new Error("Cannot cancel shipped order");

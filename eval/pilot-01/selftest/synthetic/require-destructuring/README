@@ -1,0 +1,15 @@
+Synthetic scorer self-test case: require-destructuring
+
+Task: T1 (score.ts --task T1)
+Rules: S2, S6
+
+Scenario
+processPayment() adds `const { updateOrderStatus } = require("../orders/repository")` and calls it.
+
+Expected
+One CRITICAL_DIRECT runtime finding. S2 takes the symbol from the destructuring of require().
+
+Asserted fields are in expected.json; the matcher contract is in ../README.md.
+
+Deliberately not asserted
+- tsc_ok: Depends on ambient type packages (@types/node, bun-types) visible to tsc; with none installed it is false (TS2591/TS2339).

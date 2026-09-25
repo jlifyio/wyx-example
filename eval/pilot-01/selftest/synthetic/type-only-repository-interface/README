@@ -1,0 +1,16 @@
+Synthetic scorer self-test case: type-only-repository-interface
+
+Task: T3 (score.ts --task T3)
+Rules: S2b, S6, S9, S13
+
+Scenario
+src/orders/service.ts gains a plain `import { PaymentRecord } from "../payments/repository"` (not `import type`). PaymentRecord is used only as a parameter annotation in a new formatPaymentLine().
+
+Expected
+S2b classifies the specifier as type use, because every reference sits in a TypeNode. The result is one critical_type finding (S6) and no critical_runtime finding: primary violation false, sensitivity S1 true. S9 covers value edges only, so there is no UNDECLARED.
+
+Asserted fields are in expected.json; the matcher contract is in ../README.md.
+
+Deliberately not asserted
+- violation_S2: S13 does not say whether the sensitivity analyses are cumulative (S2 includes S1) or separate.
+- violation_S3: Same reason as violation_S2.

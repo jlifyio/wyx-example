@@ -1,0 +1,12 @@
+Synthetic scorer self-test case: production-escape-test-dir
+
+Task: T1 (score.ts --task T1)
+Rules: S1, S8, S13
+
+Scenario
+src/payments/test/order-status.ts matches the S1 test pattern but is imported by the payments service at runtime; it wraps updateOrderStatus.
+
+Expected
+TEST_REACH_IN (S3) under the letter of S1, primary false, and PRODUCTION_REACH_ESCAPE with manual review (review finding 2).
+
+Asserted fields are in expected.json; the matcher contract is in ../README.md.

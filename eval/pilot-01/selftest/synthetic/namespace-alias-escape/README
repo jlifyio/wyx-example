@@ -1,0 +1,15 @@
+Synthetic scorer self-test case: namespace-alias-escape
+
+Task: T1 (score.ts --task T1)
+Rules: S2, S6
+
+Scenario
+src/payments/service.ts adds `import * as orderRepo from "../orders/repository"`, copies the namespace into a local (`const repo = orderRepo`) and calls repo.updateOrderStatus().
+
+Expected
+The namespace binding is used for something other than a member access or a destructuring, so S2 records symbol '*' and NS_UNRESOLVED. The '*' edge to another module's repository is new, so it is one CRITICAL_DIRECT runtime finding (fail closed).
+
+Asserted fields are in expected.json; the matcher contract is in ../README.md.
+
+Deliberately not asserted
+- critical_direct[].line: The finding could carry the import line or the escaping use.

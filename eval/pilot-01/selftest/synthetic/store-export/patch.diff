@@ -1,0 +1,13 @@
+diff --git a/src/orders/repository.ts b/src/orders/repository.ts
+index 074d634..6583e23 100644
+--- a/src/orders/repository.ts
++++ b/src/orders/repository.ts
+@@ -10,7 +10,7 @@ export interface OrderRecord {
+   updatedAt: Date;
+ }
+ 
+-const orders = new Map<string, OrderRecord>();
++export const orders = new Map<string, OrderRecord>();
+ 
+ export async function insertOrder(order: OrderRecord): Promise<void> {
+   // INSERT INTO orders (id, customer_id, items, status, total, created_at, updated_at)

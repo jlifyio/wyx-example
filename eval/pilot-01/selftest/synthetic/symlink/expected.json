@@ -1,0 +1,16 @@
+{
+  "case": "symlink",
+  "task": "T1",
+  "orig_root": null,
+  "rules": [
+    "S1"
+  ],
+  "assert": {
+    "flags.symlink": {
+      "len_gte": 1
+    }
+  },
+  "unasserted": {
+    "*": "Every other field. S1 does not say whether the link target is read as a new payments code file (which could raise REPO_CLONE)."
+  }
+}

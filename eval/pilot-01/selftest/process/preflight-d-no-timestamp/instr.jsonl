@@ -1,0 +1,1 @@
+{"file_path": "@RUN@/.claude/rules/payments.md", "load_reason": "path_glob_match", "trigger_file_path": "@RUN@/src/payments/service.ts", "agent_id": null, "ts": 1790294401.0}

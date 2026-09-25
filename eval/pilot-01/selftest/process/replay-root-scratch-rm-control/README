@@ -1,0 +1,12 @@
+Process-metric self-test case: replay-root-scratch-rm-control
+
+Kind: replay (score/replay.ts), arm B, task T1
+
+Scenario
+A root scratch-check.ts (outside src/, not production) is written and later removed with `rm`, as the screen runs did. END equals BASE.
+
+Expected
+The deleted root file is listed in end_check, but it is outside src/ and the verdicts agree, so replay_incomplete stays false.
+
+@RUN@ in stream.jsonl and instr.jsonl stands for the recorded run root; ../process.ts substitutes it.
+END is BASE plus end.diff (BASE itself when there is no end.diff).

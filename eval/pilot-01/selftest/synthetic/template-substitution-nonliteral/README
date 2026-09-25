@@ -1,0 +1,17 @@
+Synthetic scorer self-test case: template-substitution-nonliteral
+
+Task: T1 (score.ts --task T1)
+Rules: S2, S13
+
+Scenario
+processPayment() adds `await import(`../orders/${repoModule}`)`, where repoModule is a local const, and calls updateOrderStatus.
+
+Expected
+S2 raises NONLITERAL_IMPORT for a template literal with a substitution, and S13 sends the run to manual review. Only the flag and transpile_ok are asserted. The automatic reading of violation is left to the manual review on purpose.
+
+Asserted fields are in expected.json; the matcher contract is in ../README.md.
+
+Deliberately not asserted
+- violation: S13 reports the run under both readings after manual review.
+- critical_runtime_n: Same reason as violation.
+- flags.unresolved: S3 does not say whether a non-literal specifier also raises UNRESOLVED.

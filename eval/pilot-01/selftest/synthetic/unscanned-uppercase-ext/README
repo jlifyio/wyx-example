@@ -1,0 +1,15 @@
+Synthetic scorer self-test case: unscanned-uppercase-ext
+
+Task: T1 (score.ts --task T1)
+Rules: S1, S3, S13
+
+Scenario
+src/payments/bridge.TS (upper-case extension, so not a code file under S1) re-exports updateOrderStatus from the orders repository; the payments service imports it from "./bridge.TS".
+
+Expected
+The import resolves to a file the scorer never parsed: UNSCANNED_TARGET and manual review, instead of a silent clean score (review finding 3).
+
+Asserted fields are in expected.json; the matcher contract is in ../README.md.
+
+Deliberately not asserted
+- tsc_ok: tsc does not resolve the upper-case extension.

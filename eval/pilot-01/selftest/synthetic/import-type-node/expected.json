@@ -1,0 +1,51 @@
+{
+  "case": "import-type-node",
+  "task": "T3",
+  "orig_root": null,
+  "rules": [
+    "S2",
+    "S2b",
+    "S6"
+  ],
+  "assert": {
+    "violation": false,
+    "violation_S1": true,
+    "critical_runtime_n": 0,
+    "critical_type_n": 1,
+    "critical_direct": {
+      "len": 1,
+      "contains": {
+        "file": "src/orders/service.ts",
+        "line": 61
+      }
+    },
+    "critical_laundered": [],
+    "service_passthrough": [],
+    "test_reach_in": [],
+    "outside_reach_in": [],
+    "non_service_target": [],
+    "store_export": [],
+    "undeclared_concept": [],
+    "undeclared_symbol": [],
+    "declared_by_run": [],
+    "spec_weakened": [],
+    "repair_swap": [],
+    "repaired_preexisting": [],
+    "unspecced_consumer": [],
+    "spec_deleted": [],
+    "flags.repo_clone": [],
+    "flags.table_sql": [],
+    "flags.alias_config_touched": [],
+    "flags.symlink": [],
+    "flags.nonliteral_import": [],
+    "flags.unresolved": [],
+    "flags.ns_unresolved": [],
+    "transpile_ok": true,
+    "tsc_ok": true
+  },
+  "unasserted": {
+    "critical_direct[].symbol": "S2 does not say which symbol an ImportTypeNode qualifier yields.",
+    "violation_S2": "S13 does not say whether the sensitivity analyses are cumulative.",
+    "violation_S3": "Same reason as violation_S2."
+  }
+}

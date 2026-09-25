@@ -1,0 +1,12 @@
+Synthetic scorer self-test case: test-file-reach-in
+
+Task: T1 (score.ts --task T1)
+Rules: S1, S3, S8, S13
+
+Scenario
+A new src/payments/service.test.ts imports from "bun:test", seeds an order through insertOrder from ../orders/repository, and calls processPayment().
+
+Expected
+TEST_REACH_IN only. The S1 test regex matches .test.ts, so the file is not production: no CRITICAL, and no UNDECLARED (S9 covers production importers only). bun:test is a builtin, so it is not UNRESOLVED (S3). Sensitivity S3 is true; S1 and S2 are false.
+
+Asserted fields are in expected.json; the matcher contract is in ../README.md.

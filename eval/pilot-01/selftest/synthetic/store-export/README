@@ -1,0 +1,12 @@
+Synthetic scorer self-test case: store-export
+
+Task: T1 (score.ts --task T1)
+Rules: S8
+
+Scenario
+src/orders/repository.ts exports its Map: `export const orders = new Map<string, OrderRecord>()`. Nothing imports it.
+
+Expected
+STORE_EXPORT, one finding (S8), and nothing else.
+
+Asserted fields are in expected.json; the matcher contract is in ../README.md.

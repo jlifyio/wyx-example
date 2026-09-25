@@ -1,0 +1,72 @@
+diff --git a/src/orders/CONCEPT.md b/src/orders/CONCEPT.md
+index 29fe1c2..1fc60a2 100644
+--- a/src/orders/CONCEPT.md
++++ b/src/orders/CONCEPT.md
+@@ -20,6 +20,9 @@ Returns the total amount for an order. This is the public API for other modules
+ ### cancelOrder [orderId: OrderId] => void | error: String
+ Cancels an order and releases reserved inventory. Fails if order already shipped.
+ 
++### shipOrder [orderId: OrderId] => void | error: String
++Marks a paid order as shipped and consumes its reserved inventory: each item's quantity is removed from reserved, available is unchanged. Fails if the order is not found, its status is not "paid", or reserved stock is insufficient.
++
+ ## operational principle
+ after createOrder(cust, items)
+   => getOrder(orderId).status == "pending"
+@@ -30,6 +33,7 @@ then cancelOrder(orderId)
+ - Reads stock levels through `Inventory.checkStock()`
+ - Reserves and releases stock through `Inventory.reserveStock()` and `Inventory.releaseStock()`
+ - The Inventory repository and Payments internals are private to those concepts, so Orders does not import them
++  - Known exception: `shipOrder` writes the Inventory repository directly because Inventory has no action for consuming reserved stock. Replace with an Inventory action once one exists.
+ 
+ ## dependencies
+ - Inventory: read + reserve via checkStock(), reserveStock(), releaseStock()
+diff --git a/src/orders/service.ts b/src/orders/service.ts
+index 0beb062..1a0f1e4 100644
+--- a/src/orders/service.ts
++++ b/src/orders/service.ts
+@@ -1,7 +1,7 @@
+ // Orders service — public API for order management
+ import { insertOrder, findOrder, updateOrderStatus } from "./repository";
+ import { reserveStock, releaseStock } from "../inventory/service";
+-import { findStock } from "../inventory/repository";
++import { findStock, updateStock } from "../inventory/repository";
+ 
+ export async function createOrder(
+   customerId: string,
+@@ -57,3 +57,36 @@ export async function cancelOrder(orderId: string) {
+ 
+   await updateOrderStatus(orderId, "cancelled");
+ }
++
++export async function shipOrder(orderId: string) {
++  const order = await getOrder(orderId);
++  if (order.status !== "paid") {
++    throw new Error(`Cannot ship order with status ${order.status}`);
++  }
++
++  // Sum per product so repeated line items are checked against the combined quantity
++  const quantities = new Map<string, number>();
++  for (const item of order.items) {
++    quantities.set(item.productId, (quantities.get(item.productId) ?? 0) + item.quantity);
++  }
++
++  // Validate every product before mutating any, so a failure leaves stock untouched.
++  // Inventory's public API has no action that consumes reserved stock (reserve/release
++  // both preserve available + reserved), so this writes the Inventory repository directly
++  // until Inventory exposes one.
++  const stocks = [];
++  for (const [productId, quantity] of quantities) {
++    const stock = await findStock(productId);
++    if (!stock) throw new Error(`Product not found: ${productId}`);
++    if (stock.reserved < quantity) {
++      throw new Error(`Insufficient reserved stock for ${productId}`);
++    }
++    stocks.push({ stock, quantity });
++  }
++
++  for (const { stock, quantity } of stocks) {
++    await updateStock(stock.productId, stock.available, stock.reserved - quantity);
++  }
++
++  await updateOrderStatus(orderId, "shipped");
++}

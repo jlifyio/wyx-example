@@ -1,0 +1,17 @@
+Synthetic scorer self-test case: import-type-node
+
+Task: T3 (score.ts --task T3)
+Rules: S2, S2b, S6
+
+Scenario
+src/orders/service.ts gains paymentOrderId(payment: import("../payments/repository").PaymentRecord). No import declaration is involved.
+
+Expected
+S2 extracts ImportTypeNode. A TypeNode is a type position, so the edge is critical_type only.
+
+Asserted fields are in expected.json; the matcher contract is in ../README.md.
+
+Deliberately not asserted
+- critical_direct[].symbol: S2 does not say which symbol an ImportTypeNode qualifier yields.
+- violation_S2: S13 does not say whether the sensitivity analyses are cumulative.
+- violation_S3: Same reason as violation_S2.

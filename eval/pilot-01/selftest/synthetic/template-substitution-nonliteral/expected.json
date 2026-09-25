@@ -1,0 +1,20 @@
+{
+  "case": "template-substitution-nonliteral",
+  "task": "T1",
+  "orig_root": null,
+  "rules": [
+    "S2",
+    "S13"
+  ],
+  "assert": {
+    "flags.nonliteral_import": {
+      "len_gte": 1
+    },
+    "transpile_ok": true
+  },
+  "unasserted": {
+    "violation": "S13 reports the run under both readings after manual review.",
+    "critical_runtime_n": "Same reason as violation.",
+    "flags.unresolved": "S3 does not say whether a non-literal specifier also raises UNRESOLVED."
+  }
+}

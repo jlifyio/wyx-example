@@ -1,0 +1,15 @@
+Synthetic scorer self-test case: launder-cjs-module-exports
+
+Task: T1 (score.ts --task T1)
+Rules: S7
+
+Scenario
+src/orders/api.cjs re-exports the orders repository's updateOrderStatus as a CommonJS `module.exports = { updateOrderStatus }`; the payments service imports `updateOrderStatus` from it and calls it.
+
+Expected
+One CRITICAL_LAUNDERED runtime finding through the re-export graph (review finding 4), plus NON_SERVICE_TARGET for the wrapper module (S8).
+
+Asserted fields are in expected.json; the matcher contract is in ../README.md.
+
+Deliberately not asserted
+- tsc_ok: The .cjs file is a production root for tsc, which rejects JavaScript roots without allowJs.

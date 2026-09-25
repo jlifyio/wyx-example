@@ -1,0 +1,8 @@
+{
+  "name": "wyx-pilot-01-harness",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "typescript": "6.0.3"
+  }
+}

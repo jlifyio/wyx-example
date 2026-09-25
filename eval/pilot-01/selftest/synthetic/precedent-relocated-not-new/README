@@ -1,0 +1,12 @@
+Synthetic scorer self-test case: precedent-relocated-not-new
+
+Task: T1 (score.ts --task T1)
+Rules: S5, S7
+
+Scenario
+The pre-existing findOrder import moves out of src/payments/service.ts into a new src/payments/order-lookup.ts, whose loadPayableOrder() wraps it. processPayment() now calls loadPayableOrder().
+
+Expected
+Clean. With module-level novelty (S5), (payments, production, src/orders/repository.ts, findOrder, value) is in both E_BASE and E_END, so it is neither new nor repaired. loadPayableOrder is a function declaration, not a re-export, so there is no LAUNDERED finding.
+
+Asserted fields are in expected.json; the matcher contract is in ../README.md.

@@ -1,0 +1,20 @@
+diff --git a/src/payments/service.ts b/src/payments/service.ts
+index 4860672..f6f5aab 100644
+--- a/src/payments/service.ts
++++ b/src/payments/service.ts
+@@ -1,6 +1,7 @@
+ // Payments service
+ import { findOrder } from "../orders/repository";
+ import { insertPayment, findPayment, updatePaymentStatus } from "./repository";
++import * as ordersApi from "../orders/service";
+ 
+ export async function processPayment(orderId: string, amount: number) {
+   const order = await findOrder(orderId);
+@@ -32,5 +33,7 @@ export async function refund(paymentId: string) {
+   const payment = await findPayment(paymentId);
+   if (!payment) throw new Error(`Payment not found: ${paymentId}`);
+   if (payment.status !== "completed") throw new Error("Can only refund completed payments");
++  const order = await ordersApi.getOrder(payment.orderId);
++  if (payment.amount > (await ordersApi.getOrderTotal(order.id))) throw new Error("Refund exceeds the order total");
+   await updatePaymentStatus(paymentId, "refunded");
+ }

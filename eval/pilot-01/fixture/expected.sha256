@@ -1,0 +1,16 @@
+# Pilot-01 input pins, "<sha256>  <key>". Keys under fixture/ and prompts/ are relative to eval/pilot-01/; keys under base/ and rules/ are relative to $EVAL_ROOT.
+78a21b629211757f3cf1220dfd266eee0ef05813c07a4fff7abe735378bbf3b1  fixture/overlay/README.md
+63a863a3591bd3621d960878e1e8d91a9238bb5e44e19c0ca6226824058f0b17  fixture/overlay/src/orders/repository.ts
+050bc0b9973b00251c03bc53a7525c68ad9c3894c219c7276b43158b02e08d32  fixture/overlay/src/orders/service.ts
+4cb455422be4daea32cd8aee3be5a2e7b7e80b304b366209e6d31e16bb63ca43  fixture/overlay/src/inventory/repository.ts
+7e64651af0a2fd3c2a544a6b597233e4ab0f20d13923f78b8e13f189eda876c4  fixture/overlay/src/payments/repository.ts
+3f9295349a3eb00e512f8dca4cff76cf6aa1efa743db7b4b0a85c31ce8e35172  fixture/overlay/src/payments/service.ts
+6080f3fa9a822e1d8768a5ab51ba533e5d06a41d6421ecbbec8e0288ca4abf0a  base/shop/src/orders/CONCEPT.md
+d42df90bc8d27fc9858a52cc5d83de50857d0a3a0b271d185ecd6a5824b8ec7b  base/shop/src/inventory/CONCEPT.md
+60ccd8b3b39646ccfa1338086f203a8a3e83dffd3b0a817890753d29ccbec9b5  base/shop/src/payments/CONCEPT.md
+ff3729e3cb043c0860038d2e1e423fb69ad1d1cc1e6e01dd94c732963564fec8  rules/orders.md
+2e0992f8d3479d2420b6c3da8f34e3798c2ebb92088b200e2444296211e833ae  rules/inventory.md
+0dcb6a12558db05543a993544a275a6fc479d8fc2a4541bb176fb2f3df18eb33  rules/payments.md
+ed110d0d82b6b30fc12f7643094ef5b273da2135a8a9cc310007b9e3329e7595  prompts/T1.txt
+8c45a7d120eb91e1a1dc977ea86e4534813056102548c5b0c186c0564e06eea4  prompts/T2.txt
+4a16a0450655a6022e28b21e47d9b44e79c6ec7247beeb3903ccc003674c7bdd  prompts/T3.txt

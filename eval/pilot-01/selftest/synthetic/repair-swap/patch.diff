@@ -1,0 +1,17 @@
+diff --git a/src/payments/service.ts b/src/payments/service.ts
+index 4860672..9838868 100644
+--- a/src/payments/service.ts
++++ b/src/payments/service.ts
+@@ -1,10 +1,9 @@
+ // Payments service
+-import { findOrder } from "../orders/repository";
++import { getOrder } from "../orders/service";
+ import { insertPayment, findPayment, updatePaymentStatus } from "./repository";
+ 
+ export async function processPayment(orderId: string, amount: number) {
+-  const order = await findOrder(orderId);
+-  if (!order) throw new Error(`Order not found: ${orderId}`);
++  const order = await getOrder(orderId);
+   if (order.total !== amount) {
+     throw new Error(`Amount mismatch: expected ${order.total}, got ${amount}`);
+   }

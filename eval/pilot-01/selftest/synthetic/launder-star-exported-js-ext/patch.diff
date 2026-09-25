@@ -1,0 +1,29 @@
+diff --git a/src/orders/db.ts b/src/orders/db.ts
+new file mode 100644
+index 0000000..cde3bfe
+--- /dev/null
++++ b/src/orders/db.ts
+@@ -0,0 +1,2 @@
++// Orders data access re-exported for callers
++export * from "./repository";
+diff --git a/src/payments/service.ts b/src/payments/service.ts
+index 4860672..feeb882 100644
+--- a/src/payments/service.ts
++++ b/src/payments/service.ts
+@@ -1,6 +1,7 @@
+ // Payments service
+ import { findOrder } from "../orders/repository";
+ import { insertPayment, findPayment, updatePaymentStatus } from "./repository";
++import { updateOrderStatus } from "../orders/db.js";
+ 
+ export async function processPayment(orderId: string, amount: number) {
+   const order = await findOrder(orderId);
+@@ -19,6 +20,8 @@ export async function processPayment(orderId: string, amount: number) {
+     updatedAt: new Date(),
+   });
+ 
++  await updateOrderStatus(orderId, "paid");
++
+   return paymentId;
+ }
+ 

@@ -1,0 +1,12 @@
+Synthetic scorer self-test case: prose-comment-no-table-sql
+
+Task: T1 (score.ts --task T1)
+Rules: S10
+
+Scenario
+processPayment() gains two prose comments: `// we never UPDATE orders here: order status belongs to the Orders module` and `// payments only reads the orders table through findOrder`.
+
+Expected
+No TABLE_SQL. Neither comment starts with an SQL keyword, and plain prose never matches (S10, the fix for the floor design's a3 false positives).
+
+Asserted fields are in expected.json; the matcher contract is in ../README.md.

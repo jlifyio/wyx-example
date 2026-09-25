@@ -1,0 +1,15 @@
+Synthetic scorer self-test case: absolute-orig-root
+
+Task: T1 (score.ts --task T1), --orig-root /tmp/shop-eval-Q7xK2p/runs/4f9a1c/shop
+Rules: S3, S6, S9
+
+Scenario
+Scored with --orig-root /tmp/shop-eval-Q7xK2p/runs/4f9a1c/shop. src/payments/service.ts imports updateOrderStatus from <orig-root>/src/orders/repository and getOrder from <orig-root>/src/orders/service.
+
+Expected
+updateOrderStatus is one CRITICAL_DIRECT runtime finding. getOrder is UNDECLARED_SYMBOL, and there is no UNRESOLVED. The service import is there because the S3 repository fallback regex would rescue any absolute path ending in orders/repository. Only stripping the orig-root prefix resolves the service import.
+
+Asserted fields are in expected.json; the matcher contract is in ../README.md.
+
+Deliberately not asserted
+- tsc_ok: The absolute imports type-check only if the orig root still exists when tsc runs.

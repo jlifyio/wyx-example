@@ -1,0 +1,90 @@
+diff --git a/src/payments/CONCEPT.md b/src/payments/CONCEPT.md
+index 9d4d191..8e38302 100644
+--- a/src/payments/CONCEPT.md
++++ b/src/payments/CONCEPT.md
+@@ -9,7 +9,7 @@ Process payments for customer orders
+ ## actions
+ 
+ ### processPayment [orderId: string, amount: number] => PaymentId | error: String
+-Charges the customer for an order. Reads order total from Orders to verify amount matches. Fails if amount mismatch or payment gateway error.
++Charges the customer for an order. Only orders with status "pending" are payable. Reads order total from Orders to verify amount matches. On success, marks the order "paid". Fails if the order is not pending, amount mismatch, a payment for the order is already in progress, or payment gateway error.
+ 
+ ### getPaymentStatus [paymentId: PaymentId] => PaymentStatus
+ Returns current payment status (pending, completed, failed).
+@@ -17,10 +17,12 @@ Returns current payment status (pending, completed, failed).
+ ## operational principle
+ after processPayment(orderId, amount)
+   => getPaymentStatus(paymentId) == "completed"
++  => Orders.getOrder(orderId).status == "paid"
+ 
+ ## interactions
+ - Reads the order total through `Orders.getOrderTotal()`
+ - The Orders repository and Inventory internals are private to those concepts, so Payments does not import them
++- Known exception (hotfix): `processPayment` reads the order and sets its status to "paid" through the Orders repository (`findOrder`, `updateOrderStatus`), because Orders has no public API for this yet. Follow-up: add an Orders service action (e.g. `markOrderPaid`, with a conditional pending -> paid update) and switch Payments to it
+ 
+ ## dependencies
+-- Orders: read-only via getOrderTotal()
++- Orders: reads order + total; writes order status "paid" (see known exception above)
+diff --git a/src/payments/service.ts b/src/payments/service.ts
+index 4860672..4975e0f 100644
+--- a/src/payments/service.ts
++++ b/src/payments/service.ts
+@@ -1,25 +1,43 @@
+ // Payments service
+-import { findOrder } from "../orders/repository";
++import { findOrder, updateOrderStatus } from "../orders/repository";
+ import { insertPayment, findPayment, updatePaymentStatus } from "./repository";
+ 
++// Orders with a payment in progress. The status check and the status update are
++// separated by awaits, so without this two concurrent calls could both see "pending".
++// Only guards a single process; a multi-instance deployment needs a conditional
++// UPDATE ... WHERE status = 'pending' in the Orders repository.
++const ordersInPayment = new Set<string>();
++
+ export async function processPayment(orderId: string, amount: number) {
+-  const order = await findOrder(orderId);
+-  if (!order) throw new Error(`Order not found: ${orderId}`);
+-  if (order.total !== amount) {
+-    throw new Error(`Amount mismatch: expected ${order.total}, got ${amount}`);
++  if (ordersInPayment.has(orderId)) {
++    throw new Error(`Payment already in progress for order: ${orderId}`);
+   }
++  ordersInPayment.add(orderId);
++  try {
++    const order = await findOrder(orderId);
++    if (!order) throw new Error(`Order not found: ${orderId}`);
++    if (order.status !== "pending") {
++      throw new Error(`Order ${orderId} is not payable: status is ${order.status}`);
++    }
++    if (order.total !== amount) {
++      throw new Error(`Amount mismatch: expected ${order.total}, got ${amount}`);
++    }
+ 
+-  const paymentId = crypto.randomUUID();
+-  await insertPayment({
+-    id: paymentId,
+-    orderId,
+-    amount,
+-    status: "completed",
+-    processedAt: new Date(),
+-    updatedAt: new Date(),
+-  });
++    const paymentId = crypto.randomUUID();
++    await insertPayment({
++      id: paymentId,
++      orderId,
++      amount,
++      status: "completed",
++      processedAt: new Date(),
++      updatedAt: new Date(),
++    });
++    await updateOrderStatus(orderId, "paid");
+ 
+-  return paymentId;
++    return paymentId;
++  } finally {
++    ordersInPayment.delete(orderId);
++  }
+ }
+ 
+ export async function getPaymentStatus(paymentId: string) {

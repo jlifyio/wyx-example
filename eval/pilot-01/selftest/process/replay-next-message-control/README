@@ -1,0 +1,12 @@
+Process-metric self-test case: replay-next-message-control
+
+Kind: replay (score/replay.ts), arm C, task T1
+
+Scenario
+Same edits as replay-same-message-sibling, but the violating Edit is in the next assistant message, written after the first Edit's result (with its injected context) came back.
+
+Expected
+wyx_before_first_violation is true.
+
+@RUN@ in stream.jsonl and instr.jsonl stands for the recorded run root; ../process.ts substitutes it.
+END is BASE plus end.diff (BASE itself when there is no end.diff).

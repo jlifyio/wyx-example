@@ -1,0 +1,12 @@
+Synthetic scorer self-test case: dynamic-import-destructuring
+
+Task: T1 (score.ts --task T1)
+Rules: S2, S6
+
+Scenario
+processPayment() adds `const { updateOrderStatus } = await import("../orders/repository")` and calls it.
+
+Expected
+One CRITICAL_DIRECT runtime finding. S2 takes the symbol from the destructuring of await import().
+
+Asserted fields are in expected.json; the matcher contract is in ../README.md.

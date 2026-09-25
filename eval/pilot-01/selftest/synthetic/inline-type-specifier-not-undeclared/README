@@ -1,0 +1,12 @@
+Synthetic scorer self-test case: inline-type-specifier-not-undeclared
+
+Task: T3 (score.ts --task T3)
+Rules: S2b, S9
+
+Scenario
+src/payments/service.ts gains getPayment() and `export type PaymentDetails`. src/orders/service.ts imports { getPayment, type PaymentDetails } from "../payments/service", and orders ## dependencies gains "- Payments: reads a payment via getPayment()".
+
+Expected
+PaymentDetails is not in the section, but it is an inline type specifier, and S2b decides type use per specifier, so there is no UNDECLARED_SYMBOL. The concept Payments and the symbol getPayment are new at END, so DECLARED_BY_RUN is raised.
+
+Asserted fields are in expected.json; the matcher contract is in ../README.md.

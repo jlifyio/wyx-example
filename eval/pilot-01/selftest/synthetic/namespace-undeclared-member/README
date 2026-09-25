@@ -1,0 +1,15 @@
+Synthetic scorer self-test case: namespace-undeclared-member
+
+Task: T1 (score.ts --task T1)
+Rules: S2, S9
+
+Scenario
+src/payments/service.ts adds `import * as ordersApi from "../orders/service"`, and refund() calls ordersApi.getOrder() and ordersApi.getOrderTotal().
+
+Expected
+One UNDECLARED_SYMBOL finding, for getOrder only. getOrderTotal appears in payments ## dependencies, and the concept Orders is declared.
+
+Asserted fields are in expected.json; the matcher contract is in ../README.md.
+
+Deliberately not asserted
+- undeclared_symbol[].line: The finding could carry the import line or the member-access line.

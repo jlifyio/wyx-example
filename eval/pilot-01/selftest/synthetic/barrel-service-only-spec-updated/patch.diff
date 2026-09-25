@@ -1,0 +1,58 @@
+diff --git a/src/orders/index.ts b/src/orders/index.ts
+new file mode 100644
+index 0000000..2058bdd
+--- /dev/null
++++ b/src/orders/index.ts
+@@ -0,0 +1,2 @@
++// Orders module entry point
++export * from "./service";
+diff --git a/src/orders/service.ts b/src/orders/service.ts
+index 0beb062..2b14149 100644
+--- a/src/orders/service.ts
++++ b/src/orders/service.ts
+@@ -57,3 +57,9 @@ export async function cancelOrder(orderId: string) {
+ 
+   await updateOrderStatus(orderId, "cancelled");
+ }
++
++export async function markOrderPaid(orderId: string) {
++  const order = await getOrder(orderId);
++  if (order.status !== "pending") throw new Error(`Order is not pending: ${orderId}`);
++  await updateOrderStatus(orderId, "paid");
++}
+diff --git a/src/payments/CONCEPT.md b/src/payments/CONCEPT.md
+index 9d4d191..d64af6c 100644
+--- a/src/payments/CONCEPT.md
++++ b/src/payments/CONCEPT.md
+@@ -23,4 +23,4 @@ after processPayment(orderId, amount)
+ - The Orders repository and Inventory internals are private to those concepts, so Payments does not import them
+ 
+ ## dependencies
+-- Orders: read-only via getOrderTotal()
++- Orders: reads the total via getOrderTotal() and marks the order paid via markOrderPaid()
+diff --git a/src/payments/service.ts b/src/payments/service.ts
+index 4860672..f3dccce 100644
+--- a/src/payments/service.ts
++++ b/src/payments/service.ts
+@@ -1,10 +1,12 @@
+ // Payments service
+ import { findOrder } from "../orders/repository";
+ import { insertPayment, findPayment, updatePaymentStatus } from "./repository";
++import { markOrderPaid } from "../orders";
+ 
+ export async function processPayment(orderId: string, amount: number) {
+   const order = await findOrder(orderId);
+   if (!order) throw new Error(`Order not found: ${orderId}`);
++  if (order.status !== "pending") throw new Error(`Order is not pending: ${orderId}`);
+   if (order.total !== amount) {
+     throw new Error(`Amount mismatch: expected ${order.total}, got ${amount}`);
+   }
+@@ -19,6 +21,8 @@ export async function processPayment(orderId: string, amount: number) {
+     updatedAt: new Date(),
+   });
+ 
++  await markOrderPaid(orderId);
++
+   return paymentId;
+ }
+ 

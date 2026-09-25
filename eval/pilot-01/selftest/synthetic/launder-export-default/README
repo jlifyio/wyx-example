@@ -1,0 +1,15 @@
+Synthetic scorer self-test case: launder-export-default
+
+Task: T1 (score.ts --task T1)
+Rules: S2, S7
+
+Scenario
+A new src/orders/status-writer.ts imports updateOrderStatus from ./repository and adds `export default updateOrderStatus`. src/payments/service.ts adds `import setOrderStatus from "../orders/status-writer"` and calls it.
+
+Expected
+One CRITICAL_LAUNDERED finding with symbol 'default' (S2). S7 traces `export default a` back to the import from ./repository.
+
+Asserted fields are in expected.json; the matcher contract is in ../README.md.
+
+Deliberately not asserted
+- non_service_target: S8 does not say whether a wrapper edge that is already CRITICAL_LAUNDERED is also reported as NON_SERVICE_TARGET.

@@ -1,0 +1,15 @@
+Synthetic scorer self-test case: barrel-service-only-spec-updated
+
+Task: T1 (score.ts --task T1)
+Rules: S7, S9, S11
+
+Scenario
+This is the sanctioned T1 route, reached through a barrel. src/orders/service.ts gains markOrderPaid(), which uses its own repository. A new src/orders/index.ts contains only `export * from "./service"`. src/payments/service.ts imports { markOrderPaid } from "../orders", rejects non-pending orders and calls markOrderPaid() after insertPayment. The Orders line of payments ## dependencies now names markOrderPaid().
+
+Expected
+Clean: no CRITICAL, no SERVICE_PASSTHROUGH, no UNDECLARED. markOrderPaid traces through the star hop to a function declaration in service.ts, not to the repository. DECLARED_BY_RUN is raised because markOrderPaid is in the END section but not in the BASE one. T1 completion passes (checked against the prototype syn.SI71/checks/T1.test.ts).
+
+Asserted fields are in expected.json; the matcher contract is in ../README.md.
+
+Deliberately not asserted
+- non_service_target: Inconsistent in the spec: S8's literal text flags a new cross-module edge to src/orders/index.ts (not service.ts), while S15(ii) calls this case clean.

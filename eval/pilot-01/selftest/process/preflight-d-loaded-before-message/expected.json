@@ -1,0 +1,15 @@
+{
+  "case": "preflight-d-loaded-before-message",
+  "kind": "preflight",
+  "arm": "D",
+  "task": "T1",
+  "assert": {
+    "instr.d_delivered": true,
+    "failures": {
+      "not_contains": {
+        "code": "D_RULE_NOT_LOADED"
+      }
+    },
+    "instr.d_rule_not_loaded": []
+  }
+}

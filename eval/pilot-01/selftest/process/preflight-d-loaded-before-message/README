@@ -1,0 +1,11 @@
+Process-metric self-test case: preflight-d-loaded-before-message
+
+Kind: preflight (score/preflight.ts), arm D, task T1
+
+Scenario
+As preflight-d-sibling-read, but the Edit is in the next assistant message (started at t=2), after the Read's result.
+
+Expected
+d_delivered true; neither D_RULE_NOT_LOADED nor D_DELIVERY_UNVERIFIABLE.
+
+@RUN@ in stream.jsonl and instr.jsonl stands for the recorded run root; ../process.ts substitutes it.

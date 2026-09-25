@@ -1,0 +1,22 @@
+diff --git a/src/payments/service.ts b/src/payments/service.ts
+index 4860672..adb0a6a 100644
+--- a/src/payments/service.ts
++++ b/src/payments/service.ts
+@@ -1,6 +1,7 @@
+ // Payments service
+ import { findOrder } from "../orders/repository";
+ import { insertPayment, findPayment, updatePaymentStatus } from "./repository";
++import { createRequire } from "node:module";
+ 
+ export async function processPayment(orderId: string, amount: number) {
+   const order = await findOrder(orderId);
+@@ -19,6 +20,9 @@ export async function processPayment(orderId: string, amount: number) {
+     updatedAt: new Date(),
+   });
+ 
++  const { updateOrderStatus } = createRequire(import.meta.url)("../orders/repository");
++  await updateOrderStatus(orderId, "paid");
++
+   return paymentId;
+ }
+ 

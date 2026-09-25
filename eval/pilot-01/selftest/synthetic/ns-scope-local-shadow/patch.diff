@@ -1,0 +1,35 @@
+diff --git a/src/orders/service.ts b/src/orders/service.ts
+index 0beb062..f5d3b75 100644
+--- a/src/orders/service.ts
++++ b/src/orders/service.ts
+@@ -57,3 +57,7 @@ export async function cancelOrder(orderId: string) {
+ 
+   await updateOrderStatus(orderId, "cancelled");
+ }
++
++export async function markOrderPaid(orderId: string) {
++  await updateOrderStatus(orderId, "paid");
++}
+diff --git a/src/payments/service.ts b/src/payments/service.ts
+index 4860672..da36773 100644
+--- a/src/payments/service.ts
++++ b/src/payments/service.ts
+@@ -19,6 +19,9 @@ export async function processPayment(orderId: string, amount: number) {
+     updatedAt: new Date(),
+   });
+ 
++  const orders = await import("../orders/service");
++  await orders.markOrderPaid(orderId);
++
+   return paymentId;
+ }
+ 
+@@ -34,3 +37,8 @@ export async function refund(paymentId: string) {
+   if (payment.status !== "completed") throw new Error("Can only refund completed payments");
+   await updatePaymentStatus(paymentId, "refunded");
+ }
++
++export function summarize(list: string[]) {
++  const orders = list.slice();
++  return orders.filter(Boolean).join(",");
++}

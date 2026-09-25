@@ -1,0 +1,14 @@
+{
+  "case": "replay-next-message-control",
+  "kind": "replay",
+  "arm": "C",
+  "task": "T1",
+  "assert": {
+    "n_steps": 2,
+    "attempted_violation": true,
+    "first_violation_step": 2,
+    "wyx_before_first_violation": true,
+    "final_violation_replay": true,
+    "replay_incomplete": false
+  }
+}

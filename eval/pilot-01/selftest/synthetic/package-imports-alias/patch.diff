@@ -1,0 +1,34 @@
+diff --git a/package.json b/package.json
+new file mode 100644
+index 0000000..4829eed
+--- /dev/null
++++ b/package.json
+@@ -0,0 +1,7 @@
++{
++  "name": "shop-backend",
++  "private": true,
++  "imports": {
++    "#orders-store": "./src/orders/repository.ts"
++  }
++}
+diff --git a/src/payments/service.ts b/src/payments/service.ts
+index 4860672..5300e31 100644
+--- a/src/payments/service.ts
++++ b/src/payments/service.ts
+@@ -1,6 +1,7 @@
+ // Payments service
+ import { findOrder } from "../orders/repository";
+ import { insertPayment, findPayment, updatePaymentStatus } from "./repository";
++import { updateOrderStatus } from "#orders-store";
+ 
+ export async function processPayment(orderId: string, amount: number) {
+   const order = await findOrder(orderId);
+@@ -19,6 +20,8 @@ export async function processPayment(orderId: string, amount: number) {
+     updatedAt: new Date(),
+   });
+ 
++  await updateOrderStatus(orderId, "paid");
++
+   return paymentId;
+ }
+ 

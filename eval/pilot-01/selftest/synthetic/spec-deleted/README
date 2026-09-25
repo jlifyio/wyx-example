@@ -1,0 +1,12 @@
+Synthetic scorer self-test case: spec-deleted
+
+Task: T1 (score.ts --task T1)
+Rules: S9
+
+Scenario
+src/payments/CONCEPT.md is deleted. src/payments/service.ts imports { getOrder, getOrderTotal } from "../orders/service" in a new getAmountDue().
+
+Expected
+SPEC_DELETED, and scoring falls back to the BASE spec. getOrderTotal is declared there and getOrder is not, so the only finding is UNDECLARED_SYMBOL getOrder. There is no UNSPECCED_CONSUMER and no UNDECLARED_CONCEPT.
+
+Asserted fields are in expected.json; the matcher contract is in ../README.md.

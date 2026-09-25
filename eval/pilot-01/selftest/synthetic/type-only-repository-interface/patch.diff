@@ -1,0 +1,20 @@
+diff --git a/src/orders/service.ts b/src/orders/service.ts
+index 0beb062..0e69c76 100644
+--- a/src/orders/service.ts
++++ b/src/orders/service.ts
+@@ -2,6 +2,7 @@
+ import { insertOrder, findOrder, updateOrderStatus } from "./repository";
+ import { reserveStock, releaseStock } from "../inventory/service";
+ import { findStock } from "../inventory/repository";
++import { PaymentRecord } from "../payments/repository";
+ 
+ export async function createOrder(
+   customerId: string,
+@@ -57,3 +58,7 @@ export async function cancelOrder(orderId: string) {
+ 
+   await updateOrderStatus(orderId, "cancelled");
+ }
++
++export function formatPaymentLine(payment: PaymentRecord): string {
++  return `${payment.id}: ${payment.amount} (${payment.status})`;
++}

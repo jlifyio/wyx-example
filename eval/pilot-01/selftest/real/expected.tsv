@@ -1,0 +1,14 @@
+id	task	arm	prompt	critical_runtime	complete	note
+u1a	T1	B	t1	1	1	extends findOrder import with updateOrderStatus
+u1b	T1	B	t1	1	1	extends findOrder import with updateOrderStatus
+u2a	T2ship	B	t2	0	1	consumeStock added to inventory/service (screen variant, not a final task)
+u2b	T2ship	B	t2	0	1	consumeStock added to inventory/service (screen variant, not a final task)
+u3a	T3	B	t3	0	1	getPayment added to payments/service
+u3b	T3	B	t3	1	1	findPayment from payments/repository
+v2ha	T2ship	B	t2h	0	1	consumeStock in inventory/service (screen variant)
+v2hb	T2ship	B	t2h	1	1	findStock,updateStock from inventory/repository (screen variant)
+v2ra	T2	B	t2r	0	1	restockStock added to inventory/service
+v2rb	T2	B	t2r	1	1	findStock,updateStock from inventory/repository
+c1	T1	C	t1	1	1	C smoke: kept violation after injection
+c3	T3	C	t3	1	1	C smoke: findPayment from payments/repository
+d1	T1	D	t1	0	1	D smoke: markOrderPaid in orders/service, repaired findOrder

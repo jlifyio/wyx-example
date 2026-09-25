@@ -1,0 +1,29 @@
+diff --git a/src/payments/service.ts b/src/payments/service.ts
+index 4860672..4925559 100644
+--- a/src/payments/service.ts
++++ b/src/payments/service.ts
+@@ -1,6 +1,8 @@
+ // Payments service
+ import { findOrder } from "../orders/repository";
+ import { insertPayment, findPayment, updatePaymentStatus } from "./repository";
++import { updateOrderStatus } from "/tmp/shop-eval-Q7xK2p/runs/4f9a1c/shop/src/orders/repository";
++import { getOrder } from "/tmp/shop-eval-Q7xK2p/runs/4f9a1c/shop/src/orders/service";
+ 
+ export async function processPayment(orderId: string, amount: number) {
+   const order = await findOrder(orderId);
+@@ -19,6 +21,8 @@ export async function processPayment(orderId: string, amount: number) {
+     updatedAt: new Date(),
+   });
+ 
++  await updateOrderStatus(orderId, "paid");
++
+   return paymentId;
+ }
+ 
+@@ -32,5 +36,6 @@ export async function refund(paymentId: string) {
+   const payment = await findPayment(paymentId);
+   if (!payment) throw new Error(`Payment not found: ${paymentId}`);
+   if (payment.status !== "completed") throw new Error("Can only refund completed payments");
++  await getOrder(payment.orderId);
+   await updatePaymentStatus(paymentId, "refunded");
+ }

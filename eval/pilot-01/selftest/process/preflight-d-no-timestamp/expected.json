@@ -1,0 +1,17 @@
+{
+  "case": "preflight-d-no-timestamp",
+  "kind": "preflight",
+  "arm": "D",
+  "task": "T1",
+  "assert": {
+    "instr.d_delivered": null,
+    "failures": {
+      "contains": {
+        "code": "D_DELIVERY_UNVERIFIABLE"
+      },
+      "not_contains": {
+        "code": "D_RULE_NOT_LOADED"
+      }
+    }
+  }
+}

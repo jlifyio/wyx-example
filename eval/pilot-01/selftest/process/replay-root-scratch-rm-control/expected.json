@@ -1,0 +1,15 @@
+{
+  "case": "replay-root-scratch-rm-control",
+  "kind": "replay",
+  "arm": "B",
+  "task": "T1",
+  "assert": {
+    "attempted_violation": false,
+    "replay_incomplete": false,
+    "replay_incomplete_reasons": [],
+    "end_check.deleted_at_end": [
+      "scratch-check.ts"
+    ],
+    "end_check.end_verdict_differs": false
+  }
+}

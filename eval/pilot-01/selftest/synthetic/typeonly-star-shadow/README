@@ -1,0 +1,12 @@
+Synthetic scorer self-test case: typeonly-star-shadow
+
+Task: T1 (score.ts --task T1)
+Rules: S2b, S7
+
+Scenario
+src/orders/api.ts re-exports the orders repository's updateOrderStatus as both a type-only star (`export type * from "./repository"`) and a value star through src/orders/repo-values.ts; the payments service imports `updateOrderStatus` from it and calls it.
+
+Expected
+The type-only star is listed first, but the value star reaches the same repository, so the finding is runtime, not type-only (review finding 6).
+
+Asserted fields are in expected.json; the matcher contract is in ../README.md.

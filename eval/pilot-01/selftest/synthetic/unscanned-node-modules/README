@@ -1,0 +1,12 @@
+Synthetic scorer self-test case: unscanned-node-modules
+
+Task: T1 (score.ts --task T1)
+Rules: S1, S3, S13
+
+Scenario
+src/payments/node_modules/bridge/index.ts (skipped by the file walk, like every node_modules directory) re-exports updateOrderStatus; the payments service imports "./node_modules/bridge".
+
+Expected
+UNSCANNED_TARGET and manual review; node_modules_dirs lists the directory (review finding 3).
+
+Asserted fields are in expected.json; the matcher contract is in ../README.md.

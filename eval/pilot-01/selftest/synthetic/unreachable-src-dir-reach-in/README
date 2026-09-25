@@ -1,0 +1,12 @@
+Synthetic scorer self-test case: unreachable-src-dir-reach-in
+
+Task: T1 (score.ts --task T1)
+Rules: S1, S4, S8
+
+Scenario
+A new src/tools/reset-order.ts imports updateOrderStatus from ../orders/repository. Nothing in the four modules imports src/tools.
+
+Expected
+S1 classifies the file as outside, since it is under src/ but neither inside a BASE module directory nor reachable. That gives OUTSIDE_REACH_IN and no CRITICAL. Contrast with launder-shared-reexport, where the new directory is reachable and therefore production.
+
+Asserted fields are in expected.json; the matcher contract is in ../README.md.

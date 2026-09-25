@@ -1,0 +1,15 @@
+diff --git a/src/payments/service.test.ts b/src/payments/service.test.ts
+new file mode 100644
+index 0000000..337af3e
+--- /dev/null
++++ b/src/payments/service.test.ts
+@@ -0,0 +1,9 @@
++// Payment flow check seeded through the Orders repository
++import { expect, test } from "bun:test";
++import { insertOrder } from "../orders/repository";
++import { processPayment } from "./service";
++
++test("processPayment accepts the exact order total", async () => {
++  await insertOrder({ id: "o1", customerId: "c1", items: [], status: "pending", total: 10, createdAt: new Date(), updatedAt: new Date() });
++  expect(typeof (await processPayment("o1", 10))).toBe("string");
++});

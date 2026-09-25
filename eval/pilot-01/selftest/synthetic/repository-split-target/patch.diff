@@ -1,0 +1,101 @@
+diff --git a/src/orders/repository.ts b/src/orders/repository.ts
+index 074d634..f5990c2 100644
+--- a/src/orders/repository.ts
++++ b/src/orders/repository.ts
+@@ -1,34 +1 @@
+-// Orders repository — data access layer
+-
+-export interface OrderRecord {
+-  id: string;
+-  customerId: string;
+-  items: Array<{ productId: string; quantity: number; price: number }>;
+-  status: "pending" | "paid" | "shipped" | "cancelled";
+-  total: number;
+-  createdAt: Date;
+-  updatedAt: Date;
+-}
+-
+-const orders = new Map<string, OrderRecord>();
+-
+-export async function insertOrder(order: OrderRecord): Promise<void> {
+-  // INSERT INTO orders (id, customer_id, items, status, total, created_at, updated_at)
+-  // VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
+-  orders.set(order.id, structuredClone(order));
+-}
+-
+-export async function findOrder(orderId: string): Promise<OrderRecord | null> {
+-  // SELECT * FROM orders WHERE id = $1
+-  const order = orders.get(orderId);
+-  return order ? structuredClone(order) : null;
+-}
+-
+-export async function updateOrderStatus(
+-  orderId: string,
+-  status: OrderRecord["status"]
+-): Promise<void> {
+-  // UPDATE orders SET status = $1, updated_at = NOW() WHERE id = $2
+-  const order = orders.get(orderId);
+-  if (order) orders.set(orderId, { ...order, status, updatedAt: new Date() });
+-}
++export * from "./store";
+diff --git a/src/orders/store.ts b/src/orders/store.ts
+new file mode 100644
+index 0000000..074d634
+--- /dev/null
++++ b/src/orders/store.ts
+@@ -0,0 +1,34 @@
++// Orders repository — data access layer
++
++export interface OrderRecord {
++  id: string;
++  customerId: string;
++  items: Array<{ productId: string; quantity: number; price: number }>;
++  status: "pending" | "paid" | "shipped" | "cancelled";
++  total: number;
++  createdAt: Date;
++  updatedAt: Date;
++}
++
++const orders = new Map<string, OrderRecord>();
++
++export async function insertOrder(order: OrderRecord): Promise<void> {
++  // INSERT INTO orders (id, customer_id, items, status, total, created_at, updated_at)
++  // VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
++  orders.set(order.id, structuredClone(order));
++}
++
++export async function findOrder(orderId: string): Promise<OrderRecord | null> {
++  // SELECT * FROM orders WHERE id = $1
++  const order = orders.get(orderId);
++  return order ? structuredClone(order) : null;
++}
++
++export async function updateOrderStatus(
++  orderId: string,
++  status: OrderRecord["status"]
++): Promise<void> {
++  // UPDATE orders SET status = $1, updated_at = NOW() WHERE id = $2
++  const order = orders.get(orderId);
++  if (order) orders.set(orderId, { ...order, status, updatedAt: new Date() });
++}
+diff --git a/src/payments/service.ts b/src/payments/service.ts
+index 4860672..57e3d59 100644
+--- a/src/payments/service.ts
++++ b/src/payments/service.ts
+@@ -1,6 +1,7 @@
+ // Payments service
+ import { findOrder } from "../orders/repository";
+ import { insertPayment, findPayment, updatePaymentStatus } from "./repository";
++import { updateOrderStatus } from "../orders/store";
+ 
+ export async function processPayment(orderId: string, amount: number) {
+   const order = await findOrder(orderId);
+@@ -19,6 +20,8 @@ export async function processPayment(orderId: string, amount: number) {
+     updatedAt: new Date(),
+   });
+ 
++  await updateOrderStatus(orderId, "paid");
++
+   return paymentId;
+ }
+ 

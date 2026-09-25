@@ -1,0 +1,12 @@
+Synthetic scorer self-test case: table-sql-string-literal
+
+Task: T3 (score.ts --task T3)
+Rules: S10
+
+Scenario
+src/orders/service.ts gains `export const PAYMENT_LOOKUP_SQL = "SELECT amount, status, processed_at FROM payments WHERE id = $1"`.
+
+Expected
+TABLE_SQL: a string literal containing an uppercase SQL statement that names payments, which the payments module owns (S10). Nothing else.
+
+Asserted fields are in expected.json; the matcher contract is in ../README.md.

@@ -1,0 +1,15 @@
+Synthetic scorer self-test case: symlink
+
+Task: T1 (score.ts --task T1)
+Rules: S1
+
+Scenario
+A new symlink src/payments/order-records.ts points to ../orders/repository.ts. Nothing imports it.
+
+Expected
+SYMLINK (S1: lstat every file, record the target). No other field is asserted, because S1 does not say whether a link's target is then walked as a code file.
+
+Asserted fields are in expected.json; the matcher contract is in ../README.md.
+
+Deliberately not asserted
+- *: Every other field. S1 does not say whether the link target is read as a new payments code file (which could raise REPO_CLONE).

@@ -1,0 +1,87 @@
+diff --git a/src/orders/CONCEPT.md b/src/orders/CONCEPT.md
+index 29fe1c2..7002660 100644
+--- a/src/orders/CONCEPT.md
++++ b/src/orders/CONCEPT.md
+@@ -17,6 +17,9 @@ Returns order details. Fails if order not found.
+ ### getOrderTotal [orderId: OrderId] => number | error: String
+ Returns the total amount for an order. This is the public API for other modules to read order totals.
+ 
++### markOrderPaid [orderId: OrderId] => void | error: String
++Moves a pending order to "paid". Called by Payments after a payment is recorded. Fails if order not found or not pending.
++
+ ### cancelOrder [orderId: OrderId] => void | error: String
+ Cancels an order and releases reserved inventory. Fails if order already shipped.
+ 
+diff --git a/src/orders/service.ts b/src/orders/service.ts
+index 0beb062..57006fb 100644
+--- a/src/orders/service.ts
++++ b/src/orders/service.ts
+@@ -47,6 +47,12 @@ export async function getOrderTotal(orderId: string): Promise<number> {
+   return order.total;
+ }
+ 
++export async function markOrderPaid(orderId: string) {
++  const order = await getOrder(orderId);
++  if (order.status !== "pending") throw new Error("Can only mark pending orders as paid");
++  await updateOrderStatus(orderId, "paid");
++}
++
+ export async function cancelOrder(orderId: string) {
+   const order = await getOrder(orderId);
+   if (order.status === "shipped") throw new Error("Cannot cancel shipped order");
+diff --git a/src/payments/CONCEPT.md b/src/payments/CONCEPT.md
+index 9d4d191..abc1338 100644
+--- a/src/payments/CONCEPT.md
++++ b/src/payments/CONCEPT.md
+@@ -9,7 +9,7 @@ Process payments for customer orders
+ ## actions
+ 
+ ### processPayment [orderId: string, amount: number] => PaymentId | error: String
+-Charges the customer for an order. Reads order total from Orders to verify amount matches. Fails if amount mismatch or payment gateway error.
++Charges the customer for an order. Reads the order from Orders to verify it is pending and the amount matches, then marks the order paid. Fails if the order is not pending, amount mismatch or payment gateway error.
+ 
+ ### getPaymentStatus [paymentId: PaymentId] => PaymentStatus
+ Returns current payment status (pending, completed, failed).
+@@ -17,10 +17,12 @@ Returns current payment status (pending, completed, failed).
+ ## operational principle
+ after processPayment(orderId, amount)
+   => getPaymentStatus(paymentId) == "completed"
++  => Orders.getOrder(orderId).status == "paid"
+ 
+ ## interactions
+-- Reads the order total through `Orders.getOrderTotal()`
++- Reads the order status and total through `Orders.getOrder()`
++- Marks the order paid through `Orders.markOrderPaid()`
+ - The Orders repository and Inventory internals are private to those concepts, so Payments does not import them
+ 
+ ## dependencies
+-- Orders: read-only via getOrderTotal()
++- Orders: read via getOrder(), write via markOrderPaid()
+diff --git a/src/payments/service.ts b/src/payments/service.ts
+index 4860672..689c236 100644
+--- a/src/payments/service.ts
++++ b/src/payments/service.ts
+@@ -1,10 +1,12 @@
+ // Payments service
+-import { findOrder } from "../orders/repository";
++import { getOrder, markOrderPaid } from "../orders/service";
+ import { insertPayment, findPayment, updatePaymentStatus } from "./repository";
+ 
+ export async function processPayment(orderId: string, amount: number) {
+-  const order = await findOrder(orderId);
+-  if (!order) throw new Error(`Order not found: ${orderId}`);
++  const order = await getOrder(orderId);
++  if (order.status !== "pending") {
++    throw new Error(`Order ${orderId} is not pending (status: ${order.status})`);
++  }
+   if (order.total !== amount) {
+     throw new Error(`Amount mismatch: expected ${order.total}, got ${amount}`);
+   }
+@@ -18,6 +20,7 @@ export async function processPayment(orderId: string, amount: number) {
+     processedAt: new Date(),
+     updatedAt: new Date(),
+   });
++  await markOrderPaid(orderId);
+ 
+   return paymentId;
+ }

@@ -1,0 +1,10 @@
+diff --git a/src/payments/service.ts b/src/payments/service.ts
+index 4860672..8f2fa95 100644
+--- a/src/payments/service.ts
++++ b/src/payments/service.ts
+@@ -33,4 +33,5 @@ export async function refund(paymentId: string) {
+   if (!payment) throw new Error(`Payment not found: ${paymentId}`);
+   if (payment.status !== "completed") throw new Error("Can only refund completed payments");
+   await updatePaymentStatus(paymentId, "refunded");
++  // UPDATE stock SET available = available + $1 WHERE product_id = $2
+ }

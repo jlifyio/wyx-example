@@ -1,0 +1,29 @@
+diff --git a/src/orders/api.ts b/src/orders/api.ts
+new file mode 100644
+index 0000000..f976787
+--- /dev/null
++++ b/src/orders/api.ts
+@@ -0,0 +1,2 @@
++import { updateOrderStatus } from "./repository";
++export const ordersApi = Object.freeze({ updateOrderStatus });
+diff --git a/src/payments/service.ts b/src/payments/service.ts
+index 4860672..1dd5648 100644
+--- a/src/payments/service.ts
++++ b/src/payments/service.ts
+@@ -1,6 +1,7 @@
+ // Payments service
+ import { findOrder } from "../orders/repository";
+ import { insertPayment, findPayment, updatePaymentStatus } from "./repository";
++import { ordersApi } from "../orders/api";
+ 
+ export async function processPayment(orderId: string, amount: number) {
+   const order = await findOrder(orderId);
+@@ -19,6 +20,8 @@ export async function processPayment(orderId: string, amount: number) {
+     updatedAt: new Date(),
+   });
+ 
++  await ordersApi.updateOrderStatus(orderId, "paid");
++
+   return paymentId;
+ }
+ 

@@ -1,0 +1,29 @@
+diff --git a/src/payments/service.ts b/src/payments/service.ts
+index 4860672..e3ce7f4 100644
+--- a/src/payments/service.ts
++++ b/src/payments/service.ts
+@@ -1,6 +1,7 @@
+ // Payments service
+ import { findOrder } from "../orders/repository";
+ import { insertPayment, findPayment, updatePaymentStatus } from "./repository";
++import { updateOrderStatus } from "../shared/orders-db";
+ 
+ export async function processPayment(orderId: string, amount: number) {
+   const order = await findOrder(orderId);
+@@ -19,6 +20,8 @@ export async function processPayment(orderId: string, amount: number) {
+     updatedAt: new Date(),
+   });
+ 
++  await updateOrderStatus(orderId, "paid");
++
+   return paymentId;
+ }
+ 
+diff --git a/src/shared/orders-db.ts b/src/shared/orders-db.ts
+new file mode 100644
+index 0000000..25b729e
+--- /dev/null
++++ b/src/shared/orders-db.ts
+@@ -0,0 +1,2 @@
++// Order status access shared with the payment flow
++export { updateOrderStatus } from "../orders/repository";

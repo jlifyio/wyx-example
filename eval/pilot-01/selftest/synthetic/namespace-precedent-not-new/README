@@ -1,0 +1,12 @@
+Synthetic scorer self-test case: namespace-precedent-not-new
+
+Task: T1 (score.ts --task T1)
+Rules: S2, S5
+
+Scenario
+The precedent import is rewritten as `import * as orderRepo from "../orders/repository"`, and processPayment() calls orderRepo.findOrder().
+
+Expected
+Clean. S2 takes the symbol findOrder from the member access. At module level (S5) the tuple equals the BASE edge, so a rewritten import statement is not a new edge and nothing counts as repaired.
+
+Asserted fields are in expected.json; the matcher contract is in ../README.md.

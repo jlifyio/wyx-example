@@ -1,0 +1,16 @@
+{
+  "case": "replay-same-message-sibling",
+  "kind": "replay",
+  "arm": "C",
+  "task": "T1",
+  "assert": {
+    "n_steps": 2,
+    "attempted_violation": true,
+    "first_violation_step": 2,
+    "wyx_pre_n": 2,
+    "wyx_before_first_violation": false,
+    "final_violation_replay": true,
+    "replay_incomplete": false,
+    "replay_desync": false
+  }
+}

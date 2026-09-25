@@ -1,0 +1,56 @@
+{
+  "case": "unscanned-extensionless",
+  "task": "T1",
+  "orig_root": null,
+  "rules": [
+    "S1",
+    "S3",
+    "S13"
+  ],
+  "assert": {
+    "violation": false,
+    "violation_S1": false,
+    "violation_S2": false,
+    "violation_S3": false,
+    "critical_runtime_n": 0,
+    "critical_type_n": 0,
+    "critical_direct": [],
+    "critical_laundered": [],
+    "service_passthrough": [],
+    "test_reach_in": [],
+    "outside_reach_in": [],
+    "non_service_target": [],
+    "store_export": [],
+    "undeclared_concept": [],
+    "undeclared_symbol": [],
+    "declared_by_run": [],
+    "spec_weakened": [],
+    "repair_swap": [],
+    "repaired_preexisting": [],
+    "unspecced_consumer": [],
+    "spec_deleted": [],
+    "flags.repo_clone": [],
+    "flags.table_sql": [],
+    "flags.alias_config_touched": [],
+    "flags.symlink": [],
+    "flags.nonliteral_import": [],
+    "flags.unresolved": [],
+    "flags.ns_unresolved": [],
+    "flags.unscanned_target": {
+      "len": 1,
+      "contains": {
+        "file": "src/payments/service.ts",
+        "line": 22,
+        "target": "src/payments/bridge"
+      }
+    },
+    "flags.production_reach_escape": [],
+    "flags.repository_split_target": [],
+    "manual_review_required": true,
+    "violation_if_ambiguous": true,
+    "transpile_ok": true
+  },
+  "unasserted": {
+    "tsc_ok": "Needs ambient Node/Bun type declarations for require/createRequire/node:module, which the scorer's tsc run does not load."
+  }
+}

@@ -1,0 +1,15 @@
+Synthetic scorer self-test case: launder-star-exported-js-ext
+
+Task: T1 (score.ts --task T1)
+Rules: S3, S7
+
+Scenario
+A new src/orders/db.ts contains only `export * from "./repository"`. src/payments/service.ts imports { updateOrderStatus } from "../orders/db.js" and calls it.
+
+Expected
+One CRITICAL_LAUNDERED finding. S3 tries a '.js' specifier as '.ts'. The S3 repository fallback regex does not match 'orders/db.js', so only real resolution finds the file (UNRESOLVED would mean the .js rule is missing). S7 follows `export *` for names the source actually exports, and updateOrderStatus is one of them.
+
+Asserted fields are in expected.json; the matcher contract is in ../README.md.
+
+Deliberately not asserted
+- non_service_target: S8 does not say whether a wrapper edge that is already CRITICAL_LAUNDERED is also reported as NON_SERVICE_TARGET.

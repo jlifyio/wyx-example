@@ -1,0 +1,16 @@
+Synthetic scorer self-test case: launder-shared-reexport
+
+Task: T1 (score.ts --task T1)
+Rules: S1, S4, S6, S7, S13
+
+Scenario
+A new file src/shared/orders-db.ts re-exports updateOrderStatus from ../orders/repository. src/payments/service.ts imports it from ../shared/orders-db and calls it after recording the payment.
+
+Expected
+Two runtime CRITICAL findings. The re-export line is itself CRITICAL_DIRECT: S6 counts export-from edges, S4 makes the new directory src/shared its own owner, and S1 makes the file production because src/payments/service.ts reaches it through the END import graph. The import in src/payments/service.ts is CRITICAL_LAUNDERED: its first hop, src/shared/orders-db.ts, is not src/orders/service.ts (S7). critical_runtime_n = |DIRECT u LAUNDERED| = 2 (S13). No UNDECLARED finding, because S9 skips edges already counted as CRITICAL.
+
+Asserted fields are in expected.json; the matcher contract is in ../README.md.
+
+Deliberately not asserted
+- non_service_target: S8 does not say whether a wrapper edge that is already CRITICAL_LAUNDERED is also reported as NON_SERVICE_TARGET.
+- unspecced_consumer: src/shared has no spec, but its only edge is CRITICAL, so S9 should not reach it; the spec does not say this explicitly.

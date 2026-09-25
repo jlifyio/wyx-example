@@ -1,0 +1,17 @@
+Synthetic scorer self-test case: import-meta-require
+
+Task: T1 (score.ts --task T1)
+Rules: S2, S6
+
+Scenario
+processPayment() adds `const { updateOrderStatus } = import.meta.require("../orders/repository")` and calls it.
+
+Expected
+One CRITICAL_DIRECT runtime finding. S2 lists import.meta.require(x) among the extracted calls.
+
+Asserted fields are in expected.json; the matcher contract is in ../README.md.
+
+Deliberately not asserted
+- tsc_ok: Depends on ambient type packages (@types/node, bun-types) visible to tsc; with none installed it is false (TS2591/TS2339).
+- critical_direct[].symbol: S2 lists destructuring for require() and import() but does not name import.meta.require(); the symbol may be updateOrderStatus or '*'.
+- flags.ns_unresolved: Depends on the previous point.

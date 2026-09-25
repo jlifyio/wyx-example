@@ -1,0 +1,12 @@
+Synthetic scorer self-test case: launder-element-access-export
+
+Task: T1 (score.ts --task T1)
+Rules: S7
+
+Scenario
+src/orders/api.ts re-exports the orders repository's updateOrderStatus as an element access with a literal key (`export const setStatus = repo["updateOrderStatus"]`); the payments service imports `setStatus` from it and calls it.
+
+Expected
+One CRITICAL_LAUNDERED runtime finding through the re-export graph (review finding 4), plus NON_SERVICE_TARGET for the wrapper module (S8).
+
+Asserted fields are in expected.json; the matcher contract is in ../README.md.

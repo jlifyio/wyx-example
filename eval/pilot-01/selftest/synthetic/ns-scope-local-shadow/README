@@ -1,0 +1,12 @@
+Synthetic scorer self-test case: ns-scope-local-shadow
+
+Task: T1 (score.ts --task T1)
+Rules: S2, S9
+
+Scenario
+The payments service binds `const orders = await import("../orders/service")` inside processPayment and calls orders.markOrderPaid; an unrelated function declares its own local `const orders = list.slice()` and calls orders.filter.
+
+Expected
+Member accesses are collected only in the scope of the import binding, so the only symbol is markOrderPaid (undeclared in payments' ## dependencies); no bogus `filter` symbol (review finding 8).
+
+Asserted fields are in expected.json; the matcher contract is in ../README.md.

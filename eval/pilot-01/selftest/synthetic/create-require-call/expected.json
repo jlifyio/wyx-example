@@ -1,0 +1,51 @@
+{
+  "case": "create-require-call",
+  "task": "T1",
+  "orig_root": null,
+  "rules": [
+    "S2",
+    "S3",
+    "S6"
+  ],
+  "assert": {
+    "violation": true,
+    "violation_S1": true,
+    "violation_S2": true,
+    "violation_S3": true,
+    "critical_runtime_n": 1,
+    "critical_type_n": 0,
+    "critical_direct": {
+      "len": 1,
+      "contains": {
+        "file": "src/payments/service.ts",
+        "line": 23
+      }
+    },
+    "critical_laundered": [],
+    "service_passthrough": [],
+    "test_reach_in": [],
+    "outside_reach_in": [],
+    "non_service_target": [],
+    "store_export": [],
+    "undeclared_concept": [],
+    "undeclared_symbol": [],
+    "declared_by_run": [],
+    "spec_weakened": [],
+    "repair_swap": [],
+    "repaired_preexisting": [],
+    "unspecced_consumer": [],
+    "spec_deleted": [],
+    "flags.repo_clone": [],
+    "flags.table_sql": [],
+    "flags.alias_config_touched": [],
+    "flags.symlink": [],
+    "flags.nonliteral_import": [],
+    "flags.unresolved": [],
+    "transpile_ok": true
+  },
+  "unasserted": {
+    "tsc_ok": "Depends on ambient type packages (@types/node, bun-types) visible to tsc; with none installed it is false (TS2591/TS2339).",
+    "critical_direct[].symbol": "S2 does not say whether destructuring of createRequire(...)(x) yields the name or '*'.",
+    "flags.ns_unresolved": "Depends on the previous point."
+  }
+}

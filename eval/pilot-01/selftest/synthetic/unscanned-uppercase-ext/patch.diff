@@ -1,0 +1,28 @@
+diff --git a/src/payments/bridge.TS b/src/payments/bridge.TS
+new file mode 100644
+index 0000000..67158dc
+--- /dev/null
++++ b/src/payments/bridge.TS
+@@ -0,0 +1 @@
++export { updateOrderStatus } from "../orders/repository";
+diff --git a/src/payments/service.ts b/src/payments/service.ts
+index 4860672..040bc2e 100644
+--- a/src/payments/service.ts
++++ b/src/payments/service.ts
+@@ -1,6 +1,7 @@
+ // Payments service
+ import { findOrder } from "../orders/repository";
+ import { insertPayment, findPayment, updatePaymentStatus } from "./repository";
++import { updateOrderStatus } from "./bridge.TS";
+ 
+ export async function processPayment(orderId: string, amount: number) {
+   const order = await findOrder(orderId);
+@@ -19,6 +20,8 @@ export async function processPayment(orderId: string, amount: number) {
+     updatedAt: new Date(),
+   });
+ 
++  await updateOrderStatus(orderId, "paid");
++
+   return paymentId;
+ }
+ 

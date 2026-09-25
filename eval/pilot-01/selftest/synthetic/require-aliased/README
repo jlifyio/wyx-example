@@ -1,0 +1,15 @@
+Synthetic scorer self-test case: require-aliased
+
+Task: T1 (score.ts --task T1)
+Rules: S2, S13
+
+Scenario
+src/payments/service.ts assigns `const load = require;` and calls `load("../orders/repository").updateOrderStatus(...)`.
+
+Expected
+The scorer cannot follow an aliased loader, so the `require` reference is recorded as NONLITERAL_IMPORT and the run goes to manual review (S13); no CRITICAL is claimed (review finding 1).
+
+Asserted fields are in expected.json; the matcher contract is in ../README.md.
+
+Deliberately not asserted
+- tsc_ok: Needs ambient Node/Bun type declarations for require/createRequire/node:module, which the scorer's tsc run does not load.

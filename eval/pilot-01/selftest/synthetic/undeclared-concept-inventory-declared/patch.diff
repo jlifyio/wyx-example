@@ -1,0 +1,29 @@
+diff --git a/src/payments/CONCEPT.md b/src/payments/CONCEPT.md
+index 9d4d191..ac5e7dd 100644
+--- a/src/payments/CONCEPT.md
++++ b/src/payments/CONCEPT.md
+@@ -24,3 +24,4 @@ after processPayment(orderId, amount)
+ 
+ ## dependencies
+ - Orders: read-only via getOrderTotal()
++- Inventory: reads stock levels via checkStock()
+diff --git a/src/payments/service.ts b/src/payments/service.ts
+index 4860672..bce35c1 100644
+--- a/src/payments/service.ts
++++ b/src/payments/service.ts
+@@ -1,6 +1,7 @@
+ // Payments service
+ import { findOrder } from "../orders/repository";
+ import { insertPayment, findPayment, updatePaymentStatus } from "./repository";
++import { checkStock } from "../inventory/service";
+ 
+ export async function processPayment(orderId: string, amount: number) {
+   const order = await findOrder(orderId);
+@@ -32,5 +33,7 @@ export async function refund(paymentId: string) {
+   const payment = await findPayment(paymentId);
+   if (!payment) throw new Error(`Payment not found: ${paymentId}`);
+   if (payment.status !== "completed") throw new Error("Can only refund completed payments");
++  const order = await findOrder(payment.orderId);
++  for (const item of order?.items ?? []) await checkStock(item.productId);
+   await updatePaymentStatus(paymentId, "refunded");
+ }

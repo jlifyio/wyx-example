@@ -1,0 +1,12 @@
+Synthetic scorer self-test case: tsconfig-paths-alias
+
+Task: T1 (score.ts --task T1)
+Rules: S3, S6
+
+Scenario
+A new root tsconfig.json has "$schema", trailing commas, baseUrl "." and paths {"@db/*": ["src/*/repository"]}. src/payments/service.ts imports { updateOrderStatus } from "@db/orders".
+
+Expected
+One CRITICAL_DIRECT runtime finding plus ALIAS_CONFIG_TOUCHED. S3 reads the config with ts.readConfigFile, which is JSONC-safe, and applies the * wildcard. The repository fallback regex does not match '@db/orders', so only config resolution finds it. tsc_ok is false under the S12 command either way. TypeScript 6.0.3 stops with TS5112 when a tsconfig.json is present and files are given on the command line, and with --ignoreConfig the alias does not resolve (TS2307).
+
+Asserted fields are in expected.json; the matcher contract is in ../README.md.

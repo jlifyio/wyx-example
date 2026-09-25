@@ -1,0 +1,2 @@
+# Keep case patches byte-exact: crlf-bold-dependency-line/patch.diff carries CRLF lines on purpose.
+patch.diff -text

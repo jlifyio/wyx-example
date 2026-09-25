@@ -1,0 +1,12 @@
+Synthetic scorer self-test case: dependency-line-forms
+
+Task: T1 (score.ts --task T1)
+Rules: S9
+
+Scenario
+Payments ## dependencies now has a nested child bullet that alone carries getOrder(), a duplicate Orders bullet, and a parenthetical label "Stock levels (Inventory): checkStock()". A later, second "## dependencies" section, separated by "## notes", holds a non-bullet line "Notifications: notifyPaymentReceived() after a successful charge". src/payments/service.ts imports getOrder, checkStock and notifyPaymentReceived from the three other services.
+
+Expected
+No UNDECLARED finding. Nested children, duplicate bullets, parenthetical labels, non-bullet lines and every occurrence of the heading all count (S9). Notifications has no spec, so its directory name is the concept name. DECLARED_BY_RUN is raised.
+
+Asserted fields are in expected.json; the matcher contract is in ../README.md.

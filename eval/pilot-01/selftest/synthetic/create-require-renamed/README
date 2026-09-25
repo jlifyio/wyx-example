@@ -1,0 +1,15 @@
+Synthetic scorer self-test case: create-require-renamed
+
+Task: T1 (score.ts --task T1)
+Rules: S2, S6
+
+Scenario
+src/payments/service.ts imports createRequire under another name (`import { createRequire as makeRequire } from "node:module"`), binds `const req = makeRequire(import.meta.url)` and calls `req("../orders/repository")` to reach updateOrderStatus.
+
+Expected
+One CRITICAL_DIRECT runtime finding: S2 covers createRequire(...)(x), whatever local name the factory is imported under (review finding 1).
+
+Asserted fields are in expected.json; the matcher contract is in ../README.md.
+
+Deliberately not asserted
+- tsc_ok: Needs ambient Node/Bun type declarations for require/createRequire/node:module, which the scorer's tsc run does not load.

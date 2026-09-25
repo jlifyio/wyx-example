@@ -1,0 +1,10 @@
+diff --git a/src/orders/service.ts b/src/orders/service.ts
+index 0beb062..7ee31ad 100644
+--- a/src/orders/service.ts
++++ b/src/orders/service.ts
+@@ -57,3 +57,5 @@ export async function cancelOrder(orderId: string) {
+ 
+   await updateOrderStatus(orderId, "cancelled");
+ }
++
++export const PAYMENT_LOOKUP_SQL = "SELECT amount, status, processed_at FROM payments WHERE id = $1";

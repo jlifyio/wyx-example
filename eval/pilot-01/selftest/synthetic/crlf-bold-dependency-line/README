@@ -1,0 +1,12 @@
+Synthetic scorer self-test case: crlf-bold-dependency-line
+
+Task: T1 (score.ts --task T1)
+Rules: S9
+
+Scenario
+src/payments/CONCEPT.md is rewritten with CRLF line endings, a capitalized "## Dependencies" heading, and the bullet "- **Orders**: read-only via `getOrderTotal()` and `getOrder()`". src/payments/service.ts imports { getOrder } from "../orders/service".
+
+Expected
+No UNDECLARED finding. S9 strips CR, matches the heading case-insensitively, and strips * _ and backticks. If CR is not stripped, the heading never matches and everything reads as undeclared. DECLARED_BY_RUN is raised because getOrder is absent at BASE.
+
+Asserted fields are in expected.json; the matcher contract is in ../README.md.

@@ -1,0 +1,12 @@
+Synthetic scorer self-test case: star-reexport-unexported-symbol
+
+Task: T1 (score.ts --task T1)
+Rules: S7, S8, S9
+
+Scenario
+A new barrel src/orders/index.ts contains `export * from "./repository"` and `export { getOrder } from "./service"`. src/payments/service.ts imports { getOrder } from "../orders" and calls it in refund().
+
+Expected
+No CRITICAL and no SERVICE_PASSTHROUGH finding. The repository does not export getOrder, so the star hop must not trace it (the S7 fix for the star false positive). The trace ends at the getOrder function declaration in service.ts, which is not a re-export. Secondary findings: NON_SERVICE_TARGET for the new cross-module value edge to src/orders/index.ts (S8), and UNDECLARED_SYMBOL getOrder. Payments ## dependencies names only getOrderTotal(), and whole-word matching must not accept getOrder inside getOrderTotal (S9).
+
+Asserted fields are in expected.json; the matcher contract is in ../README.md.

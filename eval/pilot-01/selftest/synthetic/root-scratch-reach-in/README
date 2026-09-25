@@ -1,0 +1,12 @@
+Synthetic scorer self-test case: root-scratch-reach-in
+
+Task: T1 (score.ts --task T1)
+Rules: S1, S8, S13
+
+Scenario
+A root scratch-check.ts, left behind after a manual check, imports findOrder from ./src/orders/repository and findPayment from ./src/payments/repository, one symbol per line.
+
+Expected
+OUTSIDE_REACH_IN on two lines and nothing else (S1: outside src; S8). Sensitivity S3 is true.
+
+Asserted fields are in expected.json; the matcher contract is in ../README.md.

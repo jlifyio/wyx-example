@@ -1,0 +1,12 @@
+diff --git a/src/tools/reset-order.ts b/src/tools/reset-order.ts
+new file mode 100644
+index 0000000..2b0fe5b
+--- /dev/null
++++ b/src/tools/reset-order.ts
+@@ -0,0 +1,6 @@
++// Maintenance helper that resets an order to pending
++import { updateOrderStatus } from "../orders/repository";
++
++export async function resetOrder(orderId: string) {
++  await updateOrderStatus(orderId, "pending");
++}

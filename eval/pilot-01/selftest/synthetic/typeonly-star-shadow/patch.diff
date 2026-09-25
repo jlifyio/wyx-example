@@ -1,0 +1,36 @@
+diff --git a/src/orders/api.ts b/src/orders/api.ts
+new file mode 100644
+index 0000000..451e48a
+--- /dev/null
++++ b/src/orders/api.ts
+@@ -0,0 +1,2 @@
++export type * from "./repository";
++export * from "./repo-values";
+diff --git a/src/orders/repo-values.ts b/src/orders/repo-values.ts
+new file mode 100644
+index 0000000..5ed29eb
+--- /dev/null
++++ b/src/orders/repo-values.ts
+@@ -0,0 +1 @@
++export * from "./repository";
+diff --git a/src/payments/service.ts b/src/payments/service.ts
+index 4860672..0b82519 100644
+--- a/src/payments/service.ts
++++ b/src/payments/service.ts
+@@ -1,6 +1,7 @@
+ // Payments service
+ import { findOrder } from "../orders/repository";
+ import { insertPayment, findPayment, updatePaymentStatus } from "./repository";
++import { updateOrderStatus } from "../orders/api";
+ 
+ export async function processPayment(orderId: string, amount: number) {
+   const order = await findOrder(orderId);
+@@ -19,6 +20,8 @@ export async function processPayment(orderId: string, amount: number) {
+     updatedAt: new Date(),
+   });
+ 
++  await updateOrderStatus(orderId, "paid");
++
+   return paymentId;
+ }
+ 

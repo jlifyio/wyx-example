@@ -1,0 +1,81 @@
+diff --git a/src/inventory/CONCEPT.md b/src/inventory/CONCEPT.md
+index ac6454d..3f089c8 100644
+--- a/src/inventory/CONCEPT.md
++++ b/src/inventory/CONCEPT.md
+@@ -17,6 +17,9 @@ Decrements available stock and increments reserved. Fails if insufficient stock.
+ ### releaseStock [productId: ProductId, quantity: number] => void
+ Returns reserved stock back to available. Used when an order is cancelled.
+ 
++### consumeStock [productId: ProductId, quantity: number] => void | error: String
++Decrements reserved stock; available is unchanged. Used when an order is shipped. Fails if reserved stock is insufficient.
++
+ ## operational principle
+ after reserveStock(pid, 5)
+   => checkStock(pid).available decreases by 5
+diff --git a/src/inventory/service.ts b/src/inventory/service.ts
+index 203aade..ea1c20d 100644
+--- a/src/inventory/service.ts
++++ b/src/inventory/service.ts
+@@ -19,3 +19,10 @@ export async function releaseStock(productId: string, quantity: number) {
+   if (!stock) throw new Error(`Product not found: ${productId}`);
+   await updateStock(productId, stock.available + quantity, stock.reserved - quantity);
+ }
++
++export async function consumeStock(productId: string, quantity: number) {
++  const stock = await findStock(productId);
++  if (!stock) throw new Error(`Product not found: ${productId}`);
++  if (stock.reserved < quantity) throw new Error("Insufficient reserved stock");
++  await updateStock(productId, stock.available, stock.reserved - quantity);
++}
+diff --git a/src/orders/CONCEPT.md b/src/orders/CONCEPT.md
+index 29fe1c2..9bf65b1 100644
+--- a/src/orders/CONCEPT.md
++++ b/src/orders/CONCEPT.md
+@@ -20,6 +20,9 @@ Returns the total amount for an order. This is the public API for other modules
+ ### cancelOrder [orderId: OrderId] => void | error: String
+ Cancels an order and releases reserved inventory. Fails if order already shipped.
+ 
++### shipOrder [orderId: OrderId] => void | error: String
++Marks a paid order as shipped and consumes its reserved inventory. Fails if order not found or status is not "paid".
++
+ ## operational principle
+ after createOrder(cust, items)
+   => getOrder(orderId).status == "pending"
+@@ -28,8 +31,8 @@ then cancelOrder(orderId)
+ 
+ ## interactions
+ - Reads stock levels through `Inventory.checkStock()`
+-- Reserves and releases stock through `Inventory.reserveStock()` and `Inventory.releaseStock()`
++- Reserves, releases and consumes stock through `Inventory.reserveStock()`, `Inventory.releaseStock()` and `Inventory.consumeStock()`
+ - The Inventory repository and Payments internals are private to those concepts, so Orders does not import them
+ 
+ ## dependencies
+-- Inventory: read + reserve via checkStock(), reserveStock(), releaseStock()
++- Inventory: read + reserve via checkStock(), reserveStock(), releaseStock(), consumeStock()
+diff --git a/src/orders/service.ts b/src/orders/service.ts
+index 0beb062..c6406fc 100644
+--- a/src/orders/service.ts
++++ b/src/orders/service.ts
+@@ -1,6 +1,6 @@
+ // Orders service — public API for order management
+ import { insertOrder, findOrder, updateOrderStatus } from "./repository";
+-import { reserveStock, releaseStock } from "../inventory/service";
++import { reserveStock, releaseStock, consumeStock } from "../inventory/service";
+ import { findStock } from "../inventory/repository";
+ 
+ export async function createOrder(
+@@ -57,3 +57,14 @@ export async function cancelOrder(orderId: string) {
+ 
+   await updateOrderStatus(orderId, "cancelled");
+ }
++
++export async function shipOrder(orderId: string) {
++  const order = await getOrder(orderId);
++  if (order.status !== "paid") throw new Error(`Cannot ship order with status ${order.status}`);
++
++  for (const item of order.items) {
++    await consumeStock(item.productId, item.quantity);
++  }
++
++  await updateOrderStatus(orderId, "shipped");
++}

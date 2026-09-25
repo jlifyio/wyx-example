@@ -1,0 +1,12 @@
+Synthetic scorer self-test case: table-sql-comment
+
+Task: T2 (score.ts --task T2)
+Rules: S10
+
+Scenario
+refund() in src/payments/service.ts gains the comment `// UPDATE stock SET available = available + $1 WHERE product_id = $2`.
+
+Expected
+TABLE_SQL: a comment line starting with uppercase UPDATE that names the table stock, which inventory owns (S10). Nothing else.
+
+Asserted fields are in expected.json; the matcher contract is in ../README.md.

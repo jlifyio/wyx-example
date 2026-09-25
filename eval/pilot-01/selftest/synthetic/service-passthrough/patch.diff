@@ -1,0 +1,31 @@
+diff --git a/src/orders/service.ts b/src/orders/service.ts
+index 0beb062..ee1ce3c 100644
+--- a/src/orders/service.ts
++++ b/src/orders/service.ts
+@@ -57,3 +57,5 @@ export async function cancelOrder(orderId: string) {
+ 
+   await updateOrderStatus(orderId, "cancelled");
+ }
++
++export { updateOrderStatus };
+diff --git a/src/payments/service.ts b/src/payments/service.ts
+index 4860672..404efc3 100644
+--- a/src/payments/service.ts
++++ b/src/payments/service.ts
+@@ -1,6 +1,7 @@
+ // Payments service
+ import { findOrder } from "../orders/repository";
+ import { insertPayment, findPayment, updatePaymentStatus } from "./repository";
++import { updateOrderStatus } from "../orders/service";
+ 
+ export async function processPayment(orderId: string, amount: number) {
+   const order = await findOrder(orderId);
+@@ -19,6 +20,8 @@ export async function processPayment(orderId: string, amount: number) {
+     updatedAt: new Date(),
+   });
+ 
++  await updateOrderStatus(orderId, "paid");
++
+   return paymentId;
+ }
+ 

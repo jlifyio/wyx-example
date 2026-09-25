@@ -1,0 +1,12 @@
+Synthetic scorer self-test case: unspecced-consumer
+
+Task: T1 (score.ts --task T1)
+Rules: S9
+
+Scenario
+src/notifications/service.ts, which has no CONCEPT.md, imports { getOrder } from "../orders/service" and adds the order total to the confirmation template.
+
+Expected
+UNSPECCED_CONSUMER, which is not counted as UNDECLARED (S9). Nothing else.
+
+Asserted fields are in expected.json; the matcher contract is in ../README.md.

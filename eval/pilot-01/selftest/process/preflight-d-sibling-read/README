@@ -1,0 +1,11 @@
+Process-metric self-test case: preflight-d-sibling-read
+
+Kind: preflight (score/preflight.ts), arm D, task T1
+
+Scenario
+One assistant message (started at t=0) holds a Read of src/payments/service.ts and the first src Edit (tool_use at t=3). The Read loads the payments rule at t=1, after the message began but before the Edit's tool_use.
+
+Expected
+The rule reached the model only after the message that wrote the Edit: d_delivered false and D_RULE_NOT_LOADED.
+
+@RUN@ in stream.jsonl and instr.jsonl stands for the recorded run root; ../process.ts substitutes it.

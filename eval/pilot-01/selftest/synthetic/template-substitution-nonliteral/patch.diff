@@ -1,0 +1,15 @@
+diff --git a/src/payments/service.ts b/src/payments/service.ts
+index 4860672..009bb02 100644
+--- a/src/payments/service.ts
++++ b/src/payments/service.ts
+@@ -19,6 +19,10 @@ export async function processPayment(orderId: string, amount: number) {
+     updatedAt: new Date(),
+   });
+ 
++  const repoModule = "repository";
++  const { updateOrderStatus } = await import(`../orders/${repoModule}`);
++  await updateOrderStatus(orderId, "paid");
++
+   return paymentId;
+ }
+ 

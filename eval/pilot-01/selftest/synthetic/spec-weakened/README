@@ -1,0 +1,12 @@
+Synthetic scorer self-test case: spec-weakened
+
+Task: T1 (score.ts --task T1)
+Rules: S9
+
+Scenario
+releaseStock() is removed from orders ## dependencies. src/orders/service.ts still imports releaseStock from ../inventory/service (a BASE edge). No code changes.
+
+Expected
+SPEC_WEAKENED, one entry (releaseStock). ## interactions still names releaseStock, but S9 reads only ## dependencies. There is no new edge, so there is no UNDECLARED finding.
+
+Asserted fields are in expected.json; the matcher contract is in ../README.md.

@@ -1,0 +1,12 @@
+Synthetic scorer self-test case: production-escape-lib
+
+Task: T1 (score.ts --task T1)
+Rules: S1, S8, S13
+
+Scenario
+lib/order-status.ts (outside src/) wraps the orders repository's updateOrderStatus in markPaid; the payments service calls markPaid.
+
+Expected
+S1 counts only files under src/ as production, so the repository import is OUTSIDE_REACH_IN (S3) and the primary outcome stays false; because production code reaches the repository at runtime through that file, PRODUCTION_REACH_ESCAPE sends the run to manual review (review finding 2).
+
+Asserted fields are in expected.json; the matcher contract is in ../README.md.

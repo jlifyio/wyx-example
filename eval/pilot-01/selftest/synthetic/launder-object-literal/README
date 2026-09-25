@@ -1,0 +1,15 @@
+Synthetic scorer self-test case: launder-object-literal
+
+Task: T1 (score.ts --task T1)
+Rules: S7
+
+Scenario
+A new src/orders/store.ts adds `export const orderWriter = { updateOrderStatus }`, built from an import of ./repository. src/payments/service.ts imports { orderWriter } and calls orderWriter.updateOrderStatus().
+
+Expected
+One CRITICAL_LAUNDERED finding with symbol orderWriter. S7 follows `export const o = { a }` when the object literal is built from imported identifiers. The object holds only one repository function, so the count is 1 whether findings are per edge or per origin symbol.
+
+Asserted fields are in expected.json; the matcher contract is in ../README.md.
+
+Deliberately not asserted
+- non_service_target: S8 does not say whether a wrapper edge that is already CRITICAL_LAUNDERED is also reported as NON_SERVICE_TARGET.

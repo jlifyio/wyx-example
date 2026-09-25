@@ -1,0 +1,50 @@
+{
+  "case": "import-equals-require",
+  "task": "T1",
+  "orig_root": null,
+  "rules": [
+    "S2",
+    "S6"
+  ],
+  "assert": {
+    "violation": true,
+    "violation_S1": true,
+    "violation_S2": true,
+    "violation_S3": true,
+    "critical_runtime_n": 1,
+    "critical_type_n": 0,
+    "critical_direct": {
+      "len": 1,
+      "contains": {
+        "file": "src/payments/service.ts",
+        "symbol": "updateOrderStatus"
+      }
+    },
+    "critical_laundered": [],
+    "service_passthrough": [],
+    "test_reach_in": [],
+    "outside_reach_in": [],
+    "non_service_target": [],
+    "store_export": [],
+    "undeclared_concept": [],
+    "undeclared_symbol": [],
+    "declared_by_run": [],
+    "spec_weakened": [],
+    "repair_swap": [],
+    "repaired_preexisting": [],
+    "unspecced_consumer": [],
+    "spec_deleted": [],
+    "flags.repo_clone": [],
+    "flags.table_sql": [],
+    "flags.alias_config_touched": [],
+    "flags.symlink": [],
+    "flags.nonliteral_import": [],
+    "flags.unresolved": [],
+    "flags.ns_unresolved": [],
+    "transpile_ok": true,
+    "tsc_ok": false
+  },
+  "unasserted": {
+    "critical_direct[].line": "The finding could carry either the import line or the member-access line."
+  }
+}

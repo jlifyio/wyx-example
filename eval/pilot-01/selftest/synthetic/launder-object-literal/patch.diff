@@ -1,0 +1,31 @@
+diff --git a/src/orders/store.ts b/src/orders/store.ts
+new file mode 100644
+index 0000000..6739eb7
+--- /dev/null
++++ b/src/orders/store.ts
+@@ -0,0 +1,4 @@
++// Order store facade
++import { updateOrderStatus } from "./repository";
++
++export const orderWriter = { updateOrderStatus };
+diff --git a/src/payments/service.ts b/src/payments/service.ts
+index 4860672..1d8eb1c 100644
+--- a/src/payments/service.ts
++++ b/src/payments/service.ts
+@@ -1,6 +1,7 @@
+ // Payments service
+ import { findOrder } from "../orders/repository";
+ import { insertPayment, findPayment, updatePaymentStatus } from "./repository";
++import { orderWriter } from "../orders/store";
+ 
+ export async function processPayment(orderId: string, amount: number) {
+   const order = await findOrder(orderId);
+@@ -19,6 +20,8 @@ export async function processPayment(orderId: string, amount: number) {
+     updatedAt: new Date(),
+   });
+ 
++  await orderWriter.updateOrderStatus(orderId, "paid");
++
+   return paymentId;
+ }
+ 

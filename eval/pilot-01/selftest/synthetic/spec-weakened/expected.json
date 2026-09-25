@@ -1,0 +1,43 @@
+{
+  "case": "spec-weakened",
+  "task": "T1",
+  "orig_root": null,
+  "rules": [
+    "S9"
+  ],
+  "assert": {
+    "violation": false,
+    "violation_S1": false,
+    "violation_S2": false,
+    "violation_S3": false,
+    "critical_runtime_n": 0,
+    "critical_type_n": 0,
+    "critical_direct": [],
+    "critical_laundered": [],
+    "service_passthrough": [],
+    "test_reach_in": [],
+    "outside_reach_in": [],
+    "non_service_target": [],
+    "store_export": [],
+    "undeclared_concept": [],
+    "undeclared_symbol": [],
+    "declared_by_run": [],
+    "repair_swap": [],
+    "repaired_preexisting": [],
+    "unspecced_consumer": [],
+    "spec_deleted": [],
+    "flags.repo_clone": [],
+    "flags.table_sql": [],
+    "flags.alias_config_touched": [],
+    "flags.symlink": [],
+    "flags.nonliteral_import": [],
+    "flags.unresolved": [],
+    "flags.ns_unresolved": [],
+    "transpile_ok": true,
+    "tsc_ok": true,
+    "spec_weakened": {
+      "len": 1
+    }
+  },
+  "unasserted": {}
+}

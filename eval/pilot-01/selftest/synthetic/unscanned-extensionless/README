@@ -1,0 +1,15 @@
+Synthetic scorer self-test case: unscanned-extensionless
+
+Task: T1 (score.ts --task T1)
+Rules: S1, S3, S13
+
+Scenario
+An extensionless src/payments/bridge re-exports the orders repository with module.exports; the payments service loads it with `require("./bridge")`.
+
+Expected
+UNSCANNED_TARGET (the target has no code extension) and manual review (review finding 3).
+
+Asserted fields are in expected.json; the matcher contract is in ../README.md.
+
+Deliberately not asserted
+- tsc_ok: Needs ambient Node/Bun type declarations for require/createRequire/node:module, which the scorer's tsc run does not load.

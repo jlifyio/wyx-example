@@ -1,0 +1,12 @@
+Synthetic scorer self-test case: noncode-change-no-findings
+
+Task: T1 (score.ts --task T1)
+Rules: S1, S9
+
+Scenario
+README.md gains a sentence, and the ## purpose line of src/payments/CONCEPT.md is reworded. No code and no ## dependencies change.
+
+Expected
+No findings. Non-code files are outside the code diff, spec files are read only by S9, and ## dependencies is unchanged.
+
+Asserted fields are in expected.json; the matcher contract is in ../README.md.

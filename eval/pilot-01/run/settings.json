@@ -1,0 +1,1 @@
+{"enabledPlugins":{"wyx@jlifyio":false},"hooks":{"InstructionsLoaded":[{"hooks":[{"type":"command","command":"jq -c \". + {ts: now}\" >> \"$EVAL_INSTR_LOG\""}]}]}}

@@ -1,0 +1,12 @@
+Synthetic scorer self-test case: ts-extension-specifier
+
+Task: T1 (score.ts --task T1)
+Rules: S3, S6, S12
+
+Scenario
+The payments service imports updateOrderStatus from "../orders/repository.ts" (a .ts extension, valid under Bun).
+
+Expected
+CRITICAL_DIRECT, and tsc_ok stays true: the harness tsc run allows .ts import extensions with noEmit (review finding 9).
+
+Asserted fields are in expected.json; the matcher contract is in ../README.md.

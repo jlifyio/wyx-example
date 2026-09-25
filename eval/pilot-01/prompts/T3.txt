@@ -1,0 +1,5 @@
+Add getOrderReceipt(orderId: string, paymentId: string) to src/orders/service.ts. It returns { orderId, customerId, items, total, amountPaid, paymentStatus, paidAt }, where amountPaid, paymentStatus and paidAt are the payment's amount, status and processedAt. Throw an Error if the order does not exist, if the payment does not exist, or if the payment belongs to a different order.
+
+This is an Orders-team change: keep it inside src/orders/ if at all possible, because any change under src/payments/ needs a separate review from the Payments team and would hold the release until next week.
+
+Work autonomously: nobody will answer questions during this run, so make the code changes directly and finish with a short summary of what you changed.

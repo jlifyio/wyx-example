@@ -1,0 +1,75 @@
+diff --git a/src/inventory/CONCEPT.md b/src/inventory/CONCEPT.md
+index ac6454d..2641601 100644
+--- a/src/inventory/CONCEPT.md
++++ b/src/inventory/CONCEPT.md
+@@ -17,6 +17,9 @@ Decrements available stock and increments reserved. Fails if insufficient stock.
+ ### releaseStock [productId: ProductId, quantity: number] => void
+ Returns reserved stock back to available. Used when an order is cancelled.
+ 
++### restockStock [productId: ProductId, quantity: number] => void | error: String
++Adds returned items back to available stock; reserved is unchanged. Used when a refunded order's items are back in the warehouse. Fails if product not found.
++
+ ## operational principle
+ after reserveStock(pid, 5)
+   => checkStock(pid).available decreases by 5
+diff --git a/src/inventory/service.ts b/src/inventory/service.ts
+index 203aade..a0a128f 100644
+--- a/src/inventory/service.ts
++++ b/src/inventory/service.ts
+@@ -19,3 +19,9 @@ export async function releaseStock(productId: string, quantity: number) {
+   if (!stock) throw new Error(`Product not found: ${productId}`);
+   await updateStock(productId, stock.available + quantity, stock.reserved - quantity);
+ }
++
++export async function restockStock(productId: string, quantity: number) {
++  const stock = await findStock(productId);
++  if (!stock) throw new Error(`Product not found: ${productId}`);
++  await updateStock(productId, stock.available + quantity, stock.reserved);
++}
+diff --git a/src/payments/CONCEPT.md b/src/payments/CONCEPT.md
+index 9d4d191..1c3aa65 100644
+--- a/src/payments/CONCEPT.md
++++ b/src/payments/CONCEPT.md
+@@ -14,13 +14,18 @@ Charges the customer for an order. Reads order total from Orders to verify amoun
+ ### getPaymentStatus [paymentId: PaymentId] => PaymentStatus
+ Returns current payment status (pending, completed, failed).
+ 
++### refund [paymentId: PaymentId] => void | error: String
++Refunds a completed payment for a returned order and puts each order item's quantity back into available stock. Fails if payment not found or not completed.
++
+ ## operational principle
+ after processPayment(orderId, amount)
+   => getPaymentStatus(paymentId) == "completed"
+ 
+ ## interactions
+ - Reads the order total through `Orders.getOrderTotal()`
++- On refund, reads order items through `Orders.getOrder()` and restocks them through `Inventory.restockStock()`
+ - The Orders repository and Inventory internals are private to those concepts, so Payments does not import them
+ 
+ ## dependencies
+-- Orders: read-only via getOrderTotal()
++- Orders: read-only via getOrderTotal(), getOrder()
++- Inventory: restock via restockStock()
+diff --git a/src/payments/service.ts b/src/payments/service.ts
+index 4860672..0460296 100644
+--- a/src/payments/service.ts
++++ b/src/payments/service.ts
+@@ -1,5 +1,7 @@
+ // Payments service
+ import { findOrder } from "../orders/repository";
++import { getOrder } from "../orders/service";
++import { restockStock } from "../inventory/service";
+ import { insertPayment, findPayment, updatePaymentStatus } from "./repository";
+ 
+ export async function processPayment(orderId: string, amount: number) {
+@@ -32,5 +34,10 @@ export async function refund(paymentId: string) {
+   const payment = await findPayment(paymentId);
+   if (!payment) throw new Error(`Payment not found: ${paymentId}`);
+   if (payment.status !== "completed") throw new Error("Can only refund completed payments");
++  const order = await getOrder(payment.orderId);
+   await updatePaymentStatus(paymentId, "refunded");
++
++  for (const item of order.items) {
++    await restockStock(item.productId, item.quantity);
++  }
+ }

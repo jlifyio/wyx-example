@@ -1,0 +1,15 @@
+Synthetic scorer self-test case: typeonly-star-shared-mid
+
+Task: T1 (score.ts --task T1)
+Rules: S2b, S7
+
+Scenario
+src/orders/api.ts re-exports the orders repository's updateOrderStatus as a type-only star and a value star of the same file src/orders/mid.ts (`export * from "./repository"`); the payments service imports `updateOrderStatus` from it and calls it.
+
+Expected
+The type-only path visits src/orders/mid.ts first; the tracer memoises per file and symbol instead of refusing a second visit, so the value path through the same file still yields a runtime CRITICAL_LAUNDERED (review finding 6).
+
+Asserted fields are in expected.json; the matcher contract is in ../README.md.
+
+Deliberately not asserted
+- tsc_ok: tsc rejects the duplicate star re-export of one module; Bun accepts it.

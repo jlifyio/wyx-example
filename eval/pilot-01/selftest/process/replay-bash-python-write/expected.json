@@ -1,0 +1,19 @@
+{
+  "case": "replay-bash-python-write",
+  "kind": "replay",
+  "arm": "B",
+  "task": "T1",
+  "assert": {
+    "n_steps": 0,
+    "attempted_violation": false,
+    "final_violation_replay": false,
+    "replay_incomplete": true,
+    "replay_incomplete_reasons": [
+      "end_src_divergence",
+      "end_verdict_differs"
+    ],
+    "end_check.changed_without_replay": [
+      "src/payments/helper.ts"
+    ]
+  }
+}

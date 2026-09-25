@@ -1,0 +1,12 @@
+Synthetic scorer self-test case: undeclared-concept-inventory-declared
+
+Task: T2 (score.ts --task T2)
+Rules: S9
+
+Scenario
+The code is the same as undeclared-concept-inventory, and payments ## dependencies gains "- Inventory: reads stock levels via checkStock()".
+
+Expected
+No UNDECLARED finding. DECLARED_BY_RUN is raised, because Inventory and checkStock are present at END and absent at BASE.
+
+Asserted fields are in expected.json; the matcher contract is in ../README.md.

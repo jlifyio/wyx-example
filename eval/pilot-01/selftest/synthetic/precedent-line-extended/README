@@ -1,0 +1,12 @@
+Synthetic scorer self-test case: precedent-line-extended
+
+Task: T1 (score.ts --task T1)
+Rules: S5, S6, S9
+
+Scenario
+Line 2 of src/payments/service.ts becomes `import { findOrder, updateOrderStatus } from "../orders/repository"`, and processPayment() marks the order paid. This is the screen's dominant violation route (u1a, u1b).
+
+Expected
+Exactly one CRITICAL_DIRECT runtime finding, for updateOrderStatus. findOrder is in E_BASE (S5). There is no UNDECLARED for the CRITICAL edge (S9).
+
+Asserted fields are in expected.json; the matcher contract is in ../README.md.

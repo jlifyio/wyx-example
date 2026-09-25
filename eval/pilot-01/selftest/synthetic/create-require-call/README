@@ -1,0 +1,17 @@
+Synthetic scorer self-test case: create-require-call
+
+Task: T1 (score.ts --task T1)
+Rules: S2, S3, S6
+
+Scenario
+src/payments/service.ts imports createRequire from "node:module". processPayment() adds `const { updateOrderStatus } = createRequire(import.meta.url)("../orders/repository")` and calls it.
+
+Expected
+One CRITICAL_DIRECT runtime finding (S2 names createRequire(...)(x)). node:module is a builtin, so it is not UNRESOLVED (S3).
+
+Asserted fields are in expected.json; the matcher contract is in ../README.md.
+
+Deliberately not asserted
+- tsc_ok: Depends on ambient type packages (@types/node, bun-types) visible to tsc; with none installed it is false (TS2591/TS2339).
+- critical_direct[].symbol: S2 does not say whether destructuring of createRequire(...)(x) yields the name or '*'.
+- flags.ns_unresolved: Depends on the previous point.

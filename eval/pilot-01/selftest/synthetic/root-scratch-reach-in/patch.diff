@@ -1,0 +1,11 @@
+diff --git a/scratch-check.ts b/scratch-check.ts
+new file mode 100644
+index 0000000..07652a3
+--- /dev/null
++++ b/scratch-check.ts
+@@ -0,0 +1,5 @@
++// Manual check of stored records
++import { findOrder } from "./src/orders/repository";
++import { findPayment } from "./src/payments/repository";
++
++console.log(await findOrder("o1"), await findPayment("p1"));
