@@ -36,19 +36,24 @@ wyx will scan all modules and find **3 issues in the payments module**:
 
 ### 4. See boundary checking in action
 
-Try editing `src/orders/service.ts`. When Claude writes or edits a file, wyx automatically injects the module's boundary declarations into Claude's context:
+Ask Claude to change `src/orders/service.ts`. Before each edit near a spec, wyx injects the module's boundary declarations into Claude's context:
 
 ```
-[src/orders/CONCEPT.md ## interactions]
-- READS stock levels FROM Inventory (via checkStock service API only)
-- RESERVES inventory FROM Inventory (via reserveStock service API only)
-- NEVER directly accesses Inventory repository or Payments internals
+wyx drift context: specs found near this file.
+  - src/orders/CONCEPT.md: Create and manage customer orders with stock reservation
 
-[src/orders/CONCEPT.md ## dependencies]
+Declared boundaries:
+  [src/orders/CONCEPT.md ## interactions]
+- Reads stock levels through `Inventory.checkStock()`
+- Reserves and releases stock through `Inventory.reserveStock()` and `Inventory.releaseStock()`
+- The Inventory repository and Payments internals are private to those concepts, so Orders does not import them
+  [src/orders/CONCEPT.md ## dependencies]
 - Inventory: read + reserve via checkStock(), reserveStock(), releaseStock()
+
+Before adding an import, check its target against ## dependencies above. The spec lists the concepts this module is designed to use, so importing any other concept crosses a declared boundary. If the task needs an unlisted concept, say so and propose adding it to ## dependencies before writing the import, instead of working around the boundary.
 ```
 
-Claude sees these boundaries before every write — and respects them automatically.
+After the edit, wyx repeats the dependency list as a short reminder. This is context, not enforcement: Claude checks its own imports against it.
 
 ## What's in the box
 

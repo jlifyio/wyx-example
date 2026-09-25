@@ -24,8 +24,8 @@ then releaseStock(pid, 5)
   => checkStock(pid).available increases by 5
 
 ## interactions
-- NEVER directly accesses Orders or Payments internals
-- Provides stock data to any module via checkStock()
+- Provides stock data to other modules through `checkStock()`
+- Orders and Payments internals are private to those concepts, so Inventory does not import them
 
 ## dependencies
 None — standalone module

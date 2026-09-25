@@ -1,7 +1,7 @@
 // Payments service
 
 // DRIFT ITEM #1: Boundary violation — imports orders/repository directly
-// CONCEPT.md says: "READS order total FROM Orders (via getOrderTotal service API only)"
+// CONCEPT.md says: "Reads the order total through `Orders.getOrderTotal()`"
 // But this bypasses the service API and reads from the repository directly.
 import { findOrder } from "../orders/repository";
 import { insertPayment, findPayment, updatePaymentStatus } from "./repository";

@@ -19,8 +19,8 @@ after processPayment(orderId, amount)
   => getPaymentStatus(paymentId) == "completed"
 
 ## interactions
-- READS order total FROM Orders (via getOrderTotal service API only)
-- NEVER directly accesses Orders repository or Inventory internals
+- Reads the order total through `Orders.getOrderTotal()`
+- The Orders repository and Inventory internals are private to those concepts, so Payments does not import them
 
 ## dependencies
 - Orders: read-only via getOrderTotal()

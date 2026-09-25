@@ -27,9 +27,9 @@ then cancelOrder(orderId)
   => getOrder(orderId).status == "cancelled"
 
 ## interactions
-- READS stock levels FROM Inventory (via checkStock service API only)
-- RESERVES inventory FROM Inventory (via reserveStock service API only)
-- NEVER directly accesses Inventory repository or Payments internals
+- Reads stock levels through `Inventory.checkStock()`
+- Reserves and releases stock through `Inventory.reserveStock()` and `Inventory.releaseStock()`
+- The Inventory repository and Payments internals are private to those concepts, so Orders does not import them
 
 ## dependencies
 - Inventory: read + reserve via checkStock(), reserveStock(), releaseStock()
