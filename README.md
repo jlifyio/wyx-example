@@ -1,16 +1,16 @@
 # wyx-example
 
-Example project for [wyx](https://github.com/jlifyio/wyx) — architecture boundary checking for Claude Code.
+Example project for [wyx](https://github.com/jlifyio/wyx) — a Claude Code plugin that injects declared module boundaries into Claude's context when it edits files near a spec.
 
-This is a small e-commerce backend with 4 modules. Three have [concept specs](https://github.com/jlifyio/wyx#how-wyx-solves-it); one has intentional drift for you to discover.
+This is a small e-commerce backend with 4 modules. Three have [concept specs](https://github.com/jlifyio/wyx#how-it-works); one of those has intentional drift for you to discover, and one module has no spec at all.
 
 ## Try it (2 minutes)
 
 ### 1. Install wyx
 
 ```bash
-/plugin marketplace add jlifyio/wyx
-/plugin install wyx@wyx
+/plugin marketplace add jlifyio/claude-plugins
+/plugin install wyx@jlifyio
 ```
 
 ### 2. Clone this repo and open it
@@ -74,4 +74,4 @@ After the edit, wyx repeats the dependency list as a short reminder. This is con
 ## Learn more
 
 - [wyx plugin](https://github.com/jlifyio/wyx) — full documentation
-- [How wyx works](https://github.com/jlifyio/wyx#how-wyx-solves-it) — boundary checking explained
+- [How wyx works](https://github.com/jlifyio/wyx#how-it-works) — boundary injection explained
