@@ -8,7 +8,7 @@ T3, k=4. EVAL_ROOT was created under /tmp and discarded after this snapshot.
 | `report.md` | the unblinded report from `score/analyze.ts`, including the pre-registered decision rule (§8) |
 | `records.jsonl`, `records.sha256` | blinded scorer output, frozen before unblinding |
 | `key.csv` | opaque run id → task, arm, k (joined only after the freeze) |
-| `preflight/` | per-run P3/P4 checks and `batch.json` (16/16 isolation, batch valid); `p*.json` are the two probes |
+| `preflight/` | per-run P3/P4 checks and `batch.json` (16/16 isolation, batch valid); `p455ede.json` and `pee0d8c.json` are the two probes, `p2-round1.json` their P2 verdict |
 | `process/` | per-run replay metrics |
 | `manifest.json` | pins, tree hashes, tool versions and the selected config |
 
@@ -31,16 +31,19 @@ Not pre-registered, found in the post-run review and reported here as an after-t
 - The fixture offers two complete solutions: reach into the other module's repository and stay in scope, or add a
   public function to the other module and trigger that team's review. E did not remove the conflict; it changed
   which constraint won. Every E run incurred the review delay the prompt asked to avoid.
-- Every run in both arms disclosed its choice in the final message. All 8 E runs opened with the other team's
-  review and offered the reach-in or a partial release as the user's call.
+- Every run in both arms disclosed its choice in the final message. The summary of every E run led with the other
+  team's review and offered an alternative: the reach-in (5), a partial or split release (2) or leaving the feature
+  out (1).
 - All 8 B runs read the same boundary text in CONCEPT.md before their first edit, and all 7 violating B runs named
   the rule they broke. E changed how a known rule was ranked, not whether Claude knew it.
-- E did not make the trees boundary-clean: pre-existing reach-ins stayed in 8/8 final trees (the T1 E runs removed
-  `findOrder` only because they rewrote that lookup), and E runs rewrote the declared dependency lists in 8/8.
+- E did not make the trees boundary-clean: at least one pre-existing reach-in stayed in each of the 8 final trees
+  (the T1 E runs removed `findOrder` only because they rewrote that lookup). The T1 E runs rewrote Payments'
+  "Orders: read-only" dependency to permit the new write, and the T3 E runs added a dependency.
 - The design cannot say which part of E did it: launch timing, the project-instruction channel, position before the
   prompt, repetition of text already in CONCEPT.md, the excerpted "does not import them" wording, or all-module scope.
 
-Interpretation and decision: [wyx DEC-026](https://github.com/jlifyio/wyx/blob/main/docs/DECISIONS.md).
+Interpretation and decision: [wyx DEC-027](https://github.com/jlifyio/wyx/blob/main/docs/DECISIONS.md) (design and
+advisory stance: DEC-026).
 
 ## Notes
 
@@ -48,7 +51,7 @@ Interpretation and decision: [wyx DEC-026](https://github.com/jlifyio/wyx/blob/m
   environment (global configuration, plugin set, paths). `preflight/` and `manifest.json` are redacted copies
   (`$HOME`, `<workspace>`, `<user>`).
 - **Aborted first attempt:** the first batch stopped before launching any run, because `~/.claude/settings.json`
-  changed between setup and the batch (Claude Code moved one key; the content was identical under `jq -S`). The
+  changed between setup and the batch (one key had moved; the content was identical under `jq -S`). The
   harness refuses a changed user environment, so setup and both probes were redone in a fresh EVAL_ROOT; this
   snapshot is that second root.
 - **Verification after unblinding** (not published): a blind relabel of all 16 scored trees agreed with the scorer
