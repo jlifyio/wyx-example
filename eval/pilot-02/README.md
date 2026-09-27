@@ -223,3 +223,9 @@ bun score/analyze.ts --unblind --selftest "$st"   # report.md with the decision-
   different config, or when the config's ARMS, TASKS or K differ from the manifest. `score/score-batch.sh`,
   `score/replay.ts`, `score/score.ts` and `selftest/run.sh` do not read the config: they do not depend on the arm.
 - **Results.** They go to `eval/pilot-02/results/<date>/`, with the same redactions as pilot-01.
+
+## Results
+
+Added after the run: [results/2026-09-27](results/2026-09-27/README.md). The decision rule was met (B 7/8, E 0/8), and
+every E run edited the module the prompt asked to avoid (8/8, against 1/8 in B), an outcome this pre-registration did
+not score.
