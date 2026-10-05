@@ -4,5 +4,5 @@ Demo repo: 4 modules under src/, 3 with CONCEPT.md. payments/ has INTENTIONAL dr
 - Editing a spec or module changes the README's promised findings ("3 issues in the payments module"); update README in the same commit.
 - `.claude/` is gitignored (wyx-drift-history.jsonl lands there when someone runs the demo).
 - Install strings: `/plugin marketplace add jlifyio/claude-plugins` → `/plugin install wyx@jlifyio`.
-- `eval/pilot-01/` is the wyx measurement harness (bash + bun; see its README). Its fixture exports only `src/` and `.gitignore` at the pinned `FIXTURE_SHA`, so nothing under `eval/` reaches a run.
-- Editing anything under `src/` changes the pilot's BASE tree: repin `FIXTURE_SHA` in `eval/pilot-01/config.env` and rerun Stage-0 before the next batch.
+- `eval/pilot-01/` is the wyx measurement harness (bash + bun; see its README). Its fixture exports `src/` and `.gitignore` at the pinned `FIXTURE_SHA`, then applies `eval/pilot-01/fixture/overlay/`; nothing else under `eval/` reaches a run.
+- Editing anything under `src/` changes the pilot's BASE tree: repin `FIXTURE_SHA` in both `eval/pilot-01/config.env` and `eval/pilot-02/config.env` and rerun Stage-0 before the next batch. Files in the overlay replace their `src/` counterparts in BASE.
